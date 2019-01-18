@@ -8,12 +8,14 @@ os.sys.path.insert(0,parentdir)
 import pybullet as p
 import pybullet_data
 import keyboard as k
+import dubins
 
 import time
 
 #define variables
 RIGHT = -1
 LEFT = 1
+TYPE_OF_PATH = ["LSL", "LSR", "RSL", "RSR", "RLR", "LRL" ]
 
 def update_steering ( steeringAngle ) :
 	print('steering: ', steeringAngle)
@@ -48,6 +50,20 @@ def CCC ( curve1, curve2, curve3 ) :
 	#stop moving
 	update_velocity( 0 )
 
+
+
+q0 = (0, 0, 0)
+q1 = (100, 80, 0)
+turning_radius = 1.0
+path = dubins.shortest_path(q0, q1, turning_radius)
+print('')
+print( 'shortest path from', q0, ' to ', q1 )
+print( 'length of shortest path:',  path.path_length() )
+print( 'type of path is: ', TYPE_OF_PATH[path.path_type()] )
+print('')
+
+
+
 cid = p.connect(p.SHARED_MEMORY)
 if (cid<0):
 	p.connect(p.GUI)
@@ -81,7 +97,7 @@ while (True):
 		update_velocity( 10 )
 	elif ( k.is_pressed('s') ) :
 		update_velocity( 0 )
-	elif ( k.is_pressed('r') ) :
+	elif ( k.is_pressed('h') ) :
 		#turn right
 		update_steering( -0.8 )
 	elif ( k.is_pressed('l') ) :
@@ -98,7 +114,7 @@ while (True):
 	elif ( k.is_pressed('3') ) :
 		CSC(RIGHT, LEFT)
 	elif ( k.is_pressed('4') ) :
-		CSC(LEFT, RIGHT)
+		CSC(LEFT, LEFT)
 	elif ( k.is_pressed('5') ) :
 		CCC(RIGHT, LEFT, RIGHT)
 	elif ( k.is_pressed('6') ) :
