@@ -16,7 +16,7 @@ import time
 RIGHT = -1
 LEFT = 1
 VELOCITY = 10
-ANGLE = 10.0
+ANGLE = 0.5
 TYPE_OF_PATH = ["LSL", "LSR", "RSL", "RSR", "RLR", "LRL" ]
 
 def update_steering ( steeringAngle ) :
@@ -31,14 +31,17 @@ def CSC ( curve1, curve2, time1, time2, time3 ) :
 	#start moving
 	update_velocity( VELOCITY )
 	#turn first curve
-	update_steering( curve1 * ANGLE )
-	time.sleep( time1 )
+	if ( time1 != 0 ) :
+		update_steering( curve1 * ANGLE )
+		time.sleep( time1 )
 	#turn forward
-	update_steering( 0 )
-	time.sleep( time2 )
+	if ( time2 != 0 ) :
+		update_steering( 0 )
+		time.sleep( time2 )
 	#turn second curve
-	update_steering( curve2 * ANGLE )
-	time.sleep( time3 )
+	if ( time3 != 0 ) :
+		update_steering( curve2 * ANGLE )
+		time.sleep( time3 )
 	#stop moving
 	update_velocity( 0 )
 
@@ -68,8 +71,8 @@ def f(x) :
 
 
 q0 = (0, 0, 0)
-q1 = (40, 0, 3.14)
-turning_radius = 1.0
+q1 = (0, 0, 3.14)
+turning_radius = 20.0
 path = dubins.shortest_path(q0, q1, turning_radius)
 typeP = TYPE_OF_PATH[path.path_type()]
 total_length = path.path_length()
@@ -119,21 +122,19 @@ steering = [4,6]
 
 update_steering( 0 )
 
-f(typeP)
-	
 while (True):
 
 	if ( k.is_pressed('enter') ) :
 		#start moving
-		update_velocity( 10 )
+		update_velocity( VELOCITY )
 	elif ( k.is_pressed('s') ) :
 		update_velocity( 0 )
-	elif ( k.is_pressed('h') ) :
+	elif ( k.is_pressed('r') ) :
 		#turn right
-		update_steering( -0.8 )
+		update_steering( -1 * ANGLE )
 	elif ( k.is_pressed('l') ) :
 		#turn left
-		update_steering( 0.8 )
+		update_steering( ANGLE )
 	elif ( k.is_pressed('c') ) :
 		#turn forward
 		update_steering( 0 )
@@ -150,7 +151,9 @@ while (True):
 		CCC(RIGHT, LEFT, RIGHT)
 	elif ( k.is_pressed('6') ) :
 		CCC(LEFT, RIGHT, LEFT)
-
+	elif( k.is_pressed('f') ) :
+		f(typeP)
+	
 	elif ( k.is_pressed('q') ) :
 		p.setJointMotorControl2(car,2,p.POSITION_CONTROL,positionGain=10)
 
