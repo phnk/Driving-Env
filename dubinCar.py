@@ -81,7 +81,7 @@ while (True):
 		update_velocity( 10 )
 	elif ( k.is_pressed('s') ) :
 		update_velocity( 0 )
-	elif ( k.is_pressed('h') ) :
+	elif ( k.is_pressed('r') ) :
 		#turn right
 		update_steering( -0.8 )
 	elif ( k.is_pressed('l') ) :
