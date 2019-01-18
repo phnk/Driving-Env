@@ -139,18 +139,17 @@ while (True):
 		#turn forward
 		update_steering( 0 )
 	elif ( k.is_pressed('1') ) :
-		#right - straight - right
-		CSC(RIGHT, RIGHT)
+		CSC(RIGHT,RIGHT,2,2,2)
 	elif ( k.is_pressed('2') ) :
-		CSC(LEFT, RIGHT)
+		CSC(LEFT,RIGHT,2,2,2)
 	elif ( k.is_pressed('3') ) :
-		CSC(RIGHT, LEFT)
+		CSC(RIGHT,LEFT,2,2,2)
 	elif ( k.is_pressed('4') ) :
-		CSC(LEFT, LEFT)
+		CSC(LEFT,LEFT,2,2,2)
 	elif ( k.is_pressed('5') ) :
-		CCC(RIGHT, LEFT, RIGHT)
+		CCC(RIGHT,LEFT,RIGHT,2,2,2)
 	elif ( k.is_pressed('6') ) :
-		CCC(LEFT, RIGHT, LEFT)
+		CCC(LEFT,RIGHT,LEFT,2,2,2)
 	elif( k.is_pressed('f') ) :
 		f(typeP)
 	
