@@ -15,51 +15,80 @@ import time
 #define variables
 RIGHT = -1
 LEFT = 1
+VELOCITY = 10
+ANGLE = 10.0
 TYPE_OF_PATH = ["LSL", "LSR", "RSL", "RSR", "RLR", "LRL" ]
 
 def update_steering ( steeringAngle ) :
-	print('steering: ', steeringAngle)
 	for steer in steering:
 		p.setJointMotorControl2(car,steer,p.POSITION_CONTROL,targetPosition=steeringAngle)
-	time.sleep(2)
 	
 def update_velocity ( velocity ) :
 	for wheel in inactive_wheels:
 		p.setJointMotorControl2(car,wheel,p.VELOCITY_CONTROL,targetVelocity=velocity,force=10)
 
-def CSC ( curve1, curve2 ) :
+def CSC ( curve1, curve2, time1, time2, time3 ) :
 	#start moving
-	update_velocity( 10 )
+	update_velocity( VELOCITY )
 	#turn first curve
-	update_steering( curve1 * 0.8 )
+	update_steering( curve1 * ANGLE )
+	time.sleep( time1 )
 	#turn forward
 	update_steering( 0 )
+	time.sleep( time2 )
 	#turn second curve
-	update_steering( curve2 * 0.8 )
+	update_steering( curve2 * ANGLE )
+	time.sleep( time3 )
 	#stop moving
 	update_velocity( 0 )
 
-def CCC ( curve1, curve2, curve3 ) :
-	update_velocity( 10 )
+def CCC ( curve1, curve2, curve3, time1, time2, time3 ) :
+	update_velocity( VELOCITY )
 	#turn first curve
-	update_steering( curve1 * 0.8 )
+	update_steering( curve1 * ANGLE )
+	time.sleep( time1 )
 	#turn forward
-	update_steering( curve2 * 0.8 )
+	update_steering( curve2 * ANGLE )
+	time.sleep( time2 )
 	#turn second curve
-	update_steering( curve3 * 0.8 )
+	update_steering( curve3 * ANGLE )
+	time.sleep( time3 )
 	#stop moving
 	update_velocity( 0 )
 
+def f(x) :
+	return {
+		'LSL' : CSC(LEFT, LEFT, time1, time2, time3),
+		'LSR' : CSC(LEFT, RIGHT, time1, time2, time3),
+		'RSL' : CSC(RIGHT, LEFT, time1, time2, time3),
+		'RSR' : CSC(RIGHT, RIGHT, time1, time2, time3),
+		'RLR' : CCC(RIGHT, LEFT, RIGHT, time1, time2, time3),
+		'LRL' : CCC(LEFT, RIGHT, LEFT, time1, time2, time3),
+	} [x]
 
 
 q0 = (0, 0, 0)
-q1 = (100, 80, 0)
+q1 = (40, 0, 3.14)
 turning_radius = 1.0
 path = dubins.shortest_path(q0, q1, turning_radius)
+typeP = TYPE_OF_PATH[path.path_type()]
+total_length = path.path_length()
+length1 = path.segment_length(0)
+length2 = path.segment_length(1)
+length3 = path.segment_length(2)
+
+total_time = total_length / VELOCITY
+time1 = length1 * total_time / total_length
+time2 = length2 * total_time / total_length
+time3 = length3 * total_time / total_length
+
 print('')
 print( 'shortest path from', q0, ' to ', q1 )
-print( 'length of shortest path:',  path.path_length() )
 print( 'type of path is: ', TYPE_OF_PATH[path.path_type()] )
+print( 'length of shortest path:',  path.path_length() )
+print( 'length of first segment: ', path.segment_length(0) )
+print( 'length of second segment: ', path.segment_length(1) )
+print( 'length of third segment: ', path.segment_length(2) )
 print('')
 
 
@@ -89,6 +118,8 @@ update_velocity( 0 )
 steering = [4,6]
 
 update_steering( 0 )
+
+f(typeP)
 	
 while (True):
 
@@ -119,6 +150,9 @@ while (True):
 		CCC(RIGHT, LEFT, RIGHT)
 	elif ( k.is_pressed('6') ) :
 		CCC(LEFT, RIGHT, LEFT)
+
+	elif ( k.is_pressed('q') ) :
+		p.setJointMotorControl2(car,2,p.POSITION_CONTROL,positionGain=10)
 
 	#steering
 	if (useRealTimeSim==0):
