@@ -6,6 +6,5 @@ env = gym.make('driving-v0')
 env.seed(0)
 
 env.reset()
-for _ in range(20): 
-    env.step(None)
-    time.sleep(0.1)
+for _ in range(5000): 
+    env.step(2)

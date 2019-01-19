@@ -2,20 +2,31 @@
 Contains DrivingEnv class for OpenAI gym driving-v0 environment. 
 '''
 
+
 # OpenAI gym library imports 
 import gym 
 from gym import error, spaces, utils
 from gym.utils import seeding
-
-# Function to get path to local resources 
-from gym_driving.resources import getResourcePath
 
 # External libraries 
 import pybullet as p
 import pybullet_data 
 import numpy as np
 
+# Local resources
+# Function to get path to local resources 
+from gym_driving.resources import getResourcePath
+import gym_driving.envs._helper_functions as helper
+
+
 class DrivingEnv(gym.Env):
+    '''
+    Action space - Discrete 4 
+        0 - Stop 
+        1 - Forward, left 
+        2 - Forward, straight 
+        3 - Forward, right 
+    '''
     metadata = {'render.modes': ['human']}
     
     def __init__(self):
@@ -36,8 +47,7 @@ class DrivingEnv(gym.Env):
     def step(self, action): 
         '''
         '''
-        # Apply action 
-        
+        self._apply_action(action) 
         p.stepSimulation()
 
         # Compute observation 
@@ -47,9 +57,10 @@ class DrivingEnv(gym.Env):
 
     def reset(self):
         p.resetSimulation()
-        p.setGravity(0,1000,-10)
-        p.loadURDF('plane.urdf')
-        p.loadURDF('racecar/racecar.urdf')
+        p.setGravity(0,0,-10)
+        self.plane = p.loadURDF('plane.urdf')
+        self.car = p.loadURDF('racecar/racecar.urdf')
+        helper.printJointInfo(self.car)
 
     def render(self, mode='human', close=False):
         pass 
@@ -73,3 +84,20 @@ class DrivingEnv(gym.Env):
         # Return seed used  
         return seed
     
+    def _apply_action(self, action): 
+        assert self.action_space.contains(action), f'Action {action} taken,'\
+            ' but not in space.'
+        steer_joint = [4, 6] 
+        wheel_joint = [2, 3, 5, 7]
+        
+        steering_dict = {0: [0, 0], 1: [.5, .5], 2: [0, 0], 3:[-.5, -.5]}
+        velocity = [0, 0, 0, 0] if action == 0 else [10, 10, 10, 10]
+        steering = steering_dict[action]
+
+        # Set position and velocity of steering and wheel joints
+        p.setJointMotorControlArray(self.car, steer_joint, p.POSITION_CONTROL, 
+            targetPositions=steering)
+        p.setJointMotorControlArray(self.car, wheel_joint, p.VELOCITY_CONTROL,
+            targetVelocities=velocity, forces=[10, 10, 10, 10])
+
+
