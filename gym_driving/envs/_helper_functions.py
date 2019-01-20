@@ -1,6 +1,19 @@
+'''
+Contains debug functions for driving_env.
+'''
 import pybullet as p 
 
 def printJointInfo(body_id, client_id=0): 
+    '''
+    Prints information about joints for a specified loaded URDF file.
+
+    Parameters
+    ----------
+    body_id : int
+        Body number returned by loadURDF. 
+    client_id : int, optional 
+        Client number if multiple clients are loaded. 
+    '''
     print(f'Joint info for body id {body_id}\n-----------------------')
     joint_types = ['REVOLUTE', 'PRISMATIC', 'SPHERICAL', 'PLANAR', 'FIXED']
     print('Index Type Name Parent_Link_Name')
