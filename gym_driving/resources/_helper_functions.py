@@ -1,5 +1,5 @@
 '''
-Contains debug functions for driving_env.
+Contains debug functions for environment information.
 '''
 import pybullet as p 
 
