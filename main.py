@@ -6,14 +6,14 @@ import gym
 import gym_driving
 import time
 
-
 def main(): 
     env = gym.make('driving-v0')
     env.seed(0)
 
     env.reset()
-    for _ in range(5000): 
-        env.step(2)
+    for _ in range(10000): 
+        env.step(1)
 
-if __name__ is '__main__': 
+
+if __name__ == '__main__': 
     main()

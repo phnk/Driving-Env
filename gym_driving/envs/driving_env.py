@@ -2,29 +2,26 @@
 Contains DrivingEnv class for OpenAI gym driving-v0 environment. 
 '''
 
-
 # OpenAI gym library imports 
 import gym 
 from gym import error, spaces, utils
 from gym.utils import seeding
-
 # External libraries 
 import pybullet as p
 import pybullet_data 
 import numpy as np
-
 # Local resources
 from gym_driving.resources import getResourcePath
-import gym_driving.envs._helper_functions as helper
-
+import gym_driving.resources._helper_functions as helper
+import gym_driving.resources._car as car
 
 class DrivingEnv(gym.Env):
     '''
     Action space - Discrete 4 
-        0 - Stop 
-        1 - Forward, left 
-        2 - Forward, straight 
-        3 - Forward, right 
+        0 - Forward, left 
+        1 - Forward, straight 
+        2 - Forward, right 
+        3 - No action
 
     The above action space will change with more complex car 
     implementation. See gym.spaces.Box for continuous actions space.
@@ -78,11 +75,11 @@ class DrivingEnv(gym.Env):
         p.resetSimulation()
         p.setGravity(0,0,-10)
         self.plane = p.loadURDF('plane.urdf')
-        self.car = p.loadURDF('racecar/racecar.urdf')
-        helper.printJointInfo(self.car)
+        self.car = car.Car(self.client)
 
     def render(self, mode='human', close=False):
         pass 
+        
 
     def close(self):
         ''' 
@@ -117,22 +114,16 @@ class DrivingEnv(gym.Env):
         '''
         Applies an action to the agent. 
         '''
+
         assert self.action_space.contains(action), f'Action {action} taken,'\
             ' but not in space.'
-
-        # Joint numbers for steering and wheels 
-        steer_joint = [4, 6] 
-        wheel_joint = [2, 3, 5, 7]
         
-        # Set velocity speed and steering position based on action taken 
-        steering_dict = {0: [0, 0], 1: [.5, .5], 2: [0, 0], 3:[-.5, -.5]}
-        velocity = [0, 0, 0, 0] if action == 0 else [10, 10, 10, 10]
-        steering = steering_dict[action]
+        action_choice = {
+            0: (10, 10, -10),
+            1: (20, 20,  0), 
+            2: (10, 10, 10),
+            3: (0, 0, 0)
+        }
 
-        # Set position and velocity of steering and wheel joints
-        p.setJointMotorControlArray(self.car, steer_joint, p.POSITION_CONTROL, 
-            targetPositions=steering)
-        p.setJointMotorControlArray(self.car, wheel_joint, p.VELOCITY_CONTROL,
-            targetVelocities=velocity, forces=[10, 10, 10, 10])
-
+        self.car.apply_action(action_choice[action])
 
