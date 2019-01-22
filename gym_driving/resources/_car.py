@@ -1,3 +1,6 @@
+'''
+Contains Car class.
+'''
 # External resources
 import pybullet as p 
 import numpy as np
@@ -22,7 +25,7 @@ class Car:
             basePosition=[0, 0, 0],
             physicsClientId=self.client)
 
-        # Joint indicies for racecar/racecar.urdf
+        # Joint indices for racecar/racecar.urdf
         joint_indices = { 
             'left_steering': 4, 
             'right_steering': 6, 
@@ -45,7 +48,6 @@ class Car:
         ]
         self.num_drive_wheels = len(self.drive_wheels)
         self.num_steer_wheels = len(self.steer_wheels)
-        self.t = 0
 
         self.wheel_velocity = 0
 
@@ -69,14 +71,15 @@ class Car:
         action : float, float
             Throttle amount [0, 1], steering position [-0.5, 0.5].
         '''
-        self.t += 1
         
         # Speed parameters
         throttle = action[0]
-        max_torque = 50
-        c_drag = 0.4257
-        c_rr = 12.8
+        max_torque = 30
+        c_drag = 0.15
+        c_rolling = 20
+        c_break = -2
         car_mass = 5.81
+
         simulation_step = 0.004 
         wheel_radius = 0.05
         max_wheel_joint_speed = 100
@@ -84,8 +87,8 @@ class Car:
         # Calculate speed from throttle 
         v = self.get_velocity()
         speed = np.linalg.norm(v) + 1e-9
-        friction_force = v * -(c_drag * c_rr * speed)
-        wheel_force =  self.get_orientation() * max_torque * throttle
+        friction_force = v * -(c_drag * c_rolling * speed)
+        wheel_force = self.get_orientation() * max_torque * throttle 
         self.wheel_velocity = self.wheel_velocity + \
             simulation_step * (wheel_force + friction_force) / car_mass
         wheel_joint_speed = np.linalg.norm(self.wheel_velocity) / wheel_radius
@@ -106,13 +109,7 @@ class Car:
             controlMode=p.VELOCITY_CONTROL, 
             targetVelocities=[wheel_joint_speed] * self.num_drive_wheels,
             physicsClientId=self.client)
-       
-        if self.t % 100 == 0: 
-            print(wheel_joint_speed)
 
-        if self.t > 2000: 
-            exit()
-        
     def get_observation(self, observation): 
         pass
 
@@ -129,24 +126,23 @@ class Car:
 
     def get_velocity(self): 
         '''
-        Returns the velocity of the car in m/s for x, y, z. 
+        Returns the velocity of the car in m/s for x, y.
 
         Returns
         -------
         np.ndarray 
             x, y, z speed in m/s.
         '''
-        return np.array(p.getBaseVelocity(self.car, self.client)[0])
+        return np.array(p.getBaseVelocity(self.car, self.client)[0])[0:2]
 
     def get_orientation(self): 
         ''' 
-        Returns unit orientation of car in x, y, z.
+        Returns unit orientation of car in x, y.
         '''
         angle = np.array(p.getEulerFromQuaternion(
             p.getBasePositionAndOrientation(self.car, self.client)[1])) 
         vec = (np.cos(angle[2]) * np.cos(angle[1]), 
-               np.sin(angle[2]) * np.cos(angle[1]),
-               np.sin(angle[1]))
+               np.sin(angle[2]) * np.cos(angle[1]))
         vec = np.array(vec)
         return vec / np.linalg.norm(vec)
 

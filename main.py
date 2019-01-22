@@ -4,15 +4,32 @@ Runs driving-v0 OpenAI gym environment.
 
 import gym 
 import gym_driving
-import time
+import numpy as np
 
 def main(): 
-    env = gym.make('driving-v0')
+    # Continuous environment 
+    env = gym.make('DrivingContinuous-v0')
     env.seed(0)
+    env.reset() 
+    for t in range(100): 
+        env.step(np.array([t / 100]))
+    for t in range(1500): 
+        env.step(np.array([0]))
+    env.close()
 
-    env.reset()
-    for t in range(10000): 
-        env.step(2)
+    # Note - running both visually bugs as PyBullet only 
+    # allows one GUI client. This will be fixed with the 
+    # p.DIRECT port. 
+
+    '''
+    # Discrete environment 
+    env = gym.make('Driving-v0')
+    env.seed(0)
+    env.reset() 
+    for t in range(500): 
+        env.step(1)
+    env.close()
+    '''
 
 
 if __name__ == '__main__': 
