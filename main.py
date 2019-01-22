@@ -11,8 +11,8 @@ def main():
     env.seed(0)
 
     env.reset()
-    for _ in range(10000): 
-        env.step(1)
+    for t in range(10000): 
+        env.step(2)
 
 
 if __name__ == '__main__': 

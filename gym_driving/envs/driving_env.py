@@ -42,7 +42,6 @@ class DrivingEnv(gym.Env):
         
         self.random = np.random.RandomState()
         self.client = p.connect(p.GUI)
-        p.setAdditionalSearchPath(pybullet_data.getDataPath())
         self.seed()
                                            
     def step(self, action): 
@@ -74,7 +73,7 @@ class DrivingEnv(gym.Env):
         '''
         p.resetSimulation()
         p.setGravity(0,0,-10)
-        self.plane = p.loadURDF('plane.urdf')
+        self.plane = p.loadURDF(getResourcePath('plane/plane.urdf'))
         self.car = car.Car(self.client)
 
     def render(self, mode='human', close=False):
@@ -119,10 +118,10 @@ class DrivingEnv(gym.Env):
             ' but not in space.'
         
         action_choice = {
-            0: (10, 10, -10),
-            1: (20, 20,  0), 
-            2: (10, 10, 10),
-            3: (0, 0, 0)
+            0: [1, .5],
+            1: [1, 0],
+            2: [1, -.5],
+            3: [0, 0]
         }
 
         self.car.apply_action(action_choice[action])
