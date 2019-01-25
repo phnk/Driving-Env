@@ -34,7 +34,6 @@ class DrivingEnv(gym.Env):
 
         # Set up action space, observation space and reward range
         self.action_space = action_space
-        self._observation = list()
         self.observation_space = spaces.Box(1e8, 1e8, self.observation_features,
                                             dtype=np.float32)
         self.reward_range = (-1, 100)
@@ -63,7 +62,6 @@ class DrivingEnv(gym.Env):
         assert self.action_space.contains(action), f'Action {action} taken,'\
             ' but not in space.'
         self._apply_action(action) 
-
         p.stepSimulation()
 
         # Compute observation 
@@ -77,12 +75,12 @@ class DrivingEnv(gym.Env):
         '''
         p.resetSimulation()
         p.setGravity(0,0,-10)
-        self.plane = p.loadURDF(getResourcePath('plane/plane.urdf'), physicsClientId=self.client)
+        self.plane = p.loadURDF(getResourcePath('plane/plane.urdf'), 
+            physicsClientId=self.client)
         self.car = car.Car(self.client)
 
     def render(self, mode='human', close=False):
         pass 
-        
 
     def close(self):
         ''' 

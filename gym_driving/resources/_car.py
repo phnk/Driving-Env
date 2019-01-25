@@ -4,6 +4,7 @@ Contains Car class.
 # External resources
 import pybullet as p 
 import numpy as np
+import matplotlib.pyplot as plt
 # Local resources
 from gym_driving.resources import _helper_functions as helper
 from gym_driving.resources import getResourcePath
@@ -26,7 +27,7 @@ class Car:
             physicsClientId=self.client)
 
         # Joint indices for racecar/racecar.urdf
-        joint_indices = { 
+        self.joint_indices = { 
             'left_steering': 4, 
             'right_steering': 6, 
             'left_rear': 2, 
@@ -34,22 +35,20 @@ class Car:
             'right_rear': 3, 
             'right_front': 7
         }
-
-        # Set joint arrays
-        self.steer_wheels = [
-            joint_indices['left_steering'],
-            joint_indices['right_steering']
-        ]
         self.drive_wheels = [
-            joint_indices['left_rear'], 
-            joint_indices['right_rear'],
-            joint_indices['right_front'],
-            joint_indices['left_front']
+            self.joint_indices['left_rear'], 
+            self.joint_indices['right_rear'],
+            self.joint_indices['right_front'],
+            self.joint_indices['left_front']
         ]
+
         self.num_drive_wheels = len(self.drive_wheels)
-        self.num_steer_wheels = len(self.steer_wheels)
 
         self.wheel_velocity = 0
+
+        self.t = 0 
+        self.vel = list()
+        self.time = list()
 
     def get_ids(self): 
         ''' 
@@ -69,38 +68,59 @@ class Car:
         Parameters
         ----------
         action : float, float
-            Throttle amount [0, 1], steering position [-0.5, 0.5].
+            Throttle amount [0, 1], steering position [-0.6, 0.6].
         '''
         
         # Speed parameters
         throttle = action[0]
-        max_torque = 30
+        max_torque = 100
         c_drag = 0.15
-        c_rolling = 20
+        c_rolling = 5
         c_break = -2
-        car_mass = 5.81
-
+        car_mass = 4.73
         simulation_step = 0.004 
         wheel_radius = 0.05
-        max_wheel_joint_speed = 100
+        max_wheel_joint_speed = 120
+        epsilon = 1e-15
 
         # Calculate speed from throttle 
         v = self.get_velocity()
-        speed = np.linalg.norm(v) + 1e-9
-        friction_force = v * -(c_drag * c_rolling * speed)
+        speed = np.linalg.norm(v) + epsilon
+        friction_force = v * -(c_drag * speed)
+        friction_force += (v * -c_rolling)
         wheel_force = self.get_orientation() * max_torque * throttle 
-        self.wheel_velocity = self.wheel_velocity + \
-            simulation_step * (wheel_force + friction_force) / car_mass
-        wheel_joint_speed = np.linalg.norm(self.wheel_velocity) / wheel_radius
+        acceleration = (wheel_force + friction_force) / car_mass
+        new_velocity = v + simulation_step * acceleration
+        wheel_joint_speed = np.linalg.norm(new_velocity) / wheel_radius
         # Limit speed based on constraints
         wheel_joint_speed = min(wheel_joint_speed, max_wheel_joint_speed)
 
+
+        '''
+        self.t += 1
+        self.vel.append(np.linalg.norm(acceleration) )
+        self.time.append(self.t) 
+        if self.t > 5000: 
+            plt.plot(self.time, self.vel)
+            plt.show()
+            exit()
+        '''
+
+        # Calculate steering angle from central steering
+        central = action[1] + epsilon
+        wheelbase = 0.325 
+        half_width = 0.1
+        left_wheel_angle = np.arctan(wheelbase / (wheelbase/np.tan(central) -
+            half_width))
+        right_wheel_angle = np.arctan(wheelbase / (wheelbase/np.tan(central) +
+            half_width))
+
         # Set steering position
-        p.setJointMotorControlArray(
-            self.car,
-            self.steer_wheels,
-            controlMode=p.POSITION_CONTROL, 
-            targetPositions=[action[1]] * self.num_steer_wheels, 
+        p.setJointMotorControl2(self.car, self.joint_indices['left_steering'],
+            controlMode=p.POSITION_CONTROL, targetPosition=left_wheel_angle,
+            physicsClientId=self.client)
+        p.setJointMotorControl2(self.car, self.joint_indices['right_steering'],
+            controlMode=p.POSITION_CONTROL, targetPosition=right_wheel_angle,
             physicsClientId=self.client)
         # Set wheel velocity 
         p.setJointMotorControlArray(
@@ -108,6 +128,7 @@ class Car:
             jointIndices=self.drive_wheels,
             controlMode=p.VELOCITY_CONTROL, 
             targetVelocities=[wheel_joint_speed] * self.num_drive_wheels,
+            forces=[1.2] * self.num_drive_wheels,
             physicsClientId=self.client)
 
     def get_observation(self, observation): 

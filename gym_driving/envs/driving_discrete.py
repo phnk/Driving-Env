@@ -7,7 +7,9 @@ from gym_driving.envs.driving_env import DrivingEnv
 class DrivingEnvDiscrete(DrivingEnv): 
     '''
     Wrapper for a discrete environment.  
-    Action space - Discrete 4
+
+    Action space - int
+        Action should be integer dictating overall behavior of car. 
         0 - Forward, left 
         1 - Forward, straight 
         2 - Forward, right 
@@ -23,9 +25,9 @@ class DrivingEnvDiscrete(DrivingEnv):
         Applies a discrete action to car. 
         '''
         action_choice = {
-            0: [1, .5],
+            0: [1, .6],
             1: [1, 0],
-            2: [1, -.5],
+            2: [1, -.6],
             3: [0, 0],
         }
         self.car.apply_action(action_choice[action])

@@ -11,10 +11,8 @@ def main():
     env = gym.make('DrivingContinuous-v0')
     env.seed(0)
     env.reset() 
-    for t in range(100): 
-        env.step(np.array([t / 100]))
-    for t in range(1500): 
-        env.step(np.array([0]))
+    for _ in range(5500): 
+        env.step(np.array([1, 0.6]))
     env.close()
 
     # Note - running both visually bugs as PyBullet only 
@@ -24,10 +22,11 @@ def main():
     '''
     # Discrete environment 
     env = gym.make('Driving-v0')
-    env.seed(0)
     env.reset() 
-    for t in range(500): 
+    for t in range(200): 
         env.step(1)
+    for t in range(5000): 
+        env.step(2)
     env.close()
     '''
 
