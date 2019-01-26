@@ -25,10 +25,10 @@ class DrivingEnvDiscrete(DrivingEnv):
         Applies a discrete action to car. 
         '''
         action_choice = {
-            0: [1, .6],
-            1: [1, 0],
-            2: [1, -.6],
-            3: [0, 0],
+            0: [1, 0,  .6],
+            1: [1, 0,  0],
+            2: [1, 0, -.6],
+            3: [0, 0, 0],
         }
         self.car.apply_action(action_choice[action])
 

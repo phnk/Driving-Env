@@ -4,7 +4,6 @@ Contains Car class.
 # External resources
 import pybullet as p 
 import numpy as np
-import matplotlib.pyplot as plt
 # Local resources
 from gym_driving.resources import _helper_functions as helper
 from gym_driving.resources import getResourcePath
@@ -43,12 +42,7 @@ class Car:
         ]
 
         self.num_drive_wheels = len(self.drive_wheels)
-
-        self.wheel_velocity = 0
-
-        self.t = 0 
-        self.vel = list()
-        self.time = list()
+        self.joint_speed = 0
 
     def get_ids(self): 
         ''' 
@@ -63,57 +57,44 @@ class Car:
 
     def apply_action(self, action): 
         '''
-        Takes throttle amount and steering position. 
+        Takes throttle amount, breaking amount, and steering position. 
+
+        If any breaking is specified, throttle is not applied. 
 
         Parameters
         ----------
-        action : float, float
-            Throttle amount [0, 1], steering position [-0.6, 0.6].
+        action : float, float, float
+            Throttle [0, 1], break [0, 1], steering position [-0.6, 0.6].
         '''
         
         # Speed parameters
         throttle = action[0]
-        max_torque = 100
-        c_drag = 0.15
-        c_rolling = 5
-        c_break = -2
-        car_mass = 4.73
+        breaking = action[1]
+        max_torque = 120
+        c_drag = 0.02
+        c_rolling = 0.5
+        c_break = -50
         simulation_step = 0.004 
-        wheel_radius = 0.05
-        max_wheel_joint_speed = 120
-        epsilon = 1e-15
 
-        # Calculate speed from throttle 
-        v = self.get_velocity()
-        speed = np.linalg.norm(v) + epsilon
-        friction_force = v * -(c_drag * speed)
-        friction_force += (v * -c_rolling)
-        wheel_force = self.get_orientation() * max_torque * throttle 
-        acceleration = (wheel_force + friction_force) / car_mass
-        new_velocity = v + simulation_step * acceleration
-        wheel_joint_speed = np.linalg.norm(new_velocity) / wheel_radius
-        # Limit speed based on constraints
-        wheel_joint_speed = min(wheel_joint_speed, max_wheel_joint_speed)
-
-
-        '''
-        self.t += 1
-        self.vel.append(np.linalg.norm(acceleration) )
-        self.time.append(self.t) 
-        if self.t > 5000: 
-            plt.plot(self.time, self.vel)
-            plt.show()
-            exit()
-        '''
-
+        # Calculate speed
+        force = c_break * breaking if breaking else max_torque * throttle
+        friction = -self.joint_speed * (self.joint_speed * c_drag + c_rolling)
+        acceleration = force + friction
+        self.joint_speed = self.joint_speed + simulation_step * acceleration
+        if self.joint_speed < 0: 
+            self.joint_speed = 0
+        
         # Calculate steering angle from central steering
-        central = action[1] + epsilon
+        central = action[2] 
         wheelbase = 0.325 
         half_width = 0.1
-        left_wheel_angle = np.arctan(wheelbase / (wheelbase/np.tan(central) -
-            half_width))
-        right_wheel_angle = np.arctan(wheelbase / (wheelbase/np.tan(central) +
-            half_width))
+        if central == 0: 
+            left_wheel_angle = right_wheel_angle = 0
+        else: 
+            left_wheel_angle = np.arctan(wheelbase / (wheelbase/np.tan(central) 
+                - half_width))
+            right_wheel_angle = np.arctan(wheelbase / (wheelbase/np.tan(central)
+                + half_width))
 
         # Set steering position
         p.setJointMotorControl2(self.car, self.joint_indices['left_steering'],
@@ -127,7 +108,7 @@ class Car:
             bodyUniqueId=self.car,
             jointIndices=self.drive_wheels,
             controlMode=p.VELOCITY_CONTROL, 
-            targetVelocities=[wheel_joint_speed] * self.num_drive_wheels,
+            targetVelocities=[self.joint_speed] * self.num_drive_wheels,
             forces=[1.2] * self.num_drive_wheels,
             physicsClientId=self.client)
 
