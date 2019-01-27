@@ -43,6 +43,7 @@ class Car:
 
         self.num_drive_wheels = len(self.drive_wheels)
         self.joint_speed = 0
+        self.t = 0
 
     def get_ids(self): 
         ''' 
@@ -76,7 +77,7 @@ class Car:
         c_break = -50
         simulation_step = 0.004 
 
-        # Calculate speed
+        # Calculate speed with friction 
         force = c_break * breaking if breaking else max_torque * throttle
         friction = -self.joint_speed * (self.joint_speed * c_drag + c_rolling)
         acceleration = force + friction
@@ -103,6 +104,7 @@ class Car:
         p.setJointMotorControl2(self.car, self.joint_indices['right_steering'],
             controlMode=p.POSITION_CONTROL, targetPosition=right_wheel_angle,
             physicsClientId=self.client)
+
         # Set wheel velocity 
         p.setJointMotorControlArray(
             bodyUniqueId=self.car,
@@ -112,9 +114,28 @@ class Car:
             forces=[1.2] * self.num_drive_wheels,
             physicsClientId=self.client)
 
-    def get_observation(self, observation): 
-        pass
 
+    def get_observation(self): 
+        '''
+        Returns an observation.
+
+        Returns 
+        -------
+        To be decided. 
+
+        Current: 
+        position(2), orientation(2), velocity(2), wheel angle 
+        [-inf, inf], [-1, 1], [-5, 5], [-.7, .7]
+        '''
+        pos, ori = self.get_position_orientation() 
+        vel = self.get_velocity()
+        avg_wheel_angle = np.array((p.getJointState(self.car,
+            self.joint_indices['left_steering'], self.client)[0] + 
+            p.getJointState(self.car, self.joint_indices['right_steering'], 
+            self.client)[0]) / 2).reshape(-1)
+        return np.concatenate((pos, ori, vel, avg_wheel_angle))
+
+        
     def get_speed(self): 
         ''' 
         Returns the speed of car in m/s. 
@@ -137,14 +158,19 @@ class Car:
         '''
         return np.array(p.getBaseVelocity(self.car, self.client)[0])[0:2]
 
-    def get_orientation(self): 
+    def get_position_orientation(self): 
         ''' 
-        Returns unit orientation of car in x, y.
+        Returns position and unit orientation of car in x, y.
+
+        Returns 
+        -------
+        np.ndarray, np.ndarray
+        Position and unit orientation of car in x, y coordinates.  
         '''
-        angle = np.array(p.getEulerFromQuaternion(
-            p.getBasePositionAndOrientation(self.car, self.client)[1])) 
-        vec = (np.cos(angle[2]) * np.cos(angle[1]), 
-               np.sin(angle[2]) * np.cos(angle[1]))
-        vec = np.array(vec)
-        return vec / np.linalg.norm(vec)
+        pos_ori = p.getBasePositionAndOrientation(self.car, self.client)
+        angle = p.getEulerFromQuaternion(pos_ori[1])
+        ori = np.array([np.cos(angle[2]) * np.cos(angle[1]), 
+                        np.sin(angle[2]) * np.cos(angle[1])])
+        pos = np.array(pos_ori[0][:2])
+        return pos, ori
 
