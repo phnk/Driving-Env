@@ -10,12 +10,12 @@ from gym.utils import seeding
 import pybullet as p
 import pybullet_data 
 import numpy as np
+import matplotlib.pyplot as plt
 # Local resources
 from gym_driving.resources import getResourcePath
 import gym_driving.resources._helper_functions as helper
 import gym_driving.resources._car as car
 
-import matplotlib.pyplot as plt
 
 class DrivingEnv(gym.Env):
     '''
