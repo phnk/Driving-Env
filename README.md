@@ -14,8 +14,11 @@ pip install -e .
 import gym 
 import gym_driving
 
-env = gym.make('driving-v0')
+env = gym.make('Driving-v0')
+env = gym.make('DrivingContinuous-v0')
 ```
+Documentation on action spaces (defined through gym.spaces interface) in 
+gym_driving/envs/driving_discrete.py and gym_driving/envs/driving_continuous.py. 
 
 ### To edit: 
 
@@ -50,15 +53,6 @@ b1.getDistance(self.car)
 
 ### TODO: 
 
-#### Realistic Car Model (PRIORITY): 
-1. Find open source or build a more realistic URDF car model. 
-  -  <i>This should have Ackerman steering and friction between components. Maybe even a driveshaft and steering column!</i>
-2. a Action 
-  - Continuous application of torque to steering column adjust wheel angle. 
-  - Continuous application of torque to driveshaft to adjust car velocity.   
-2. b Observation 
-  - Obtain car speed and wheel positions or angle from model. 
-
 #### Movable Block Objects (PRIORITY):
 1. Create and position URDF objects. 
   - Position objects relative to other objects. 
@@ -67,8 +61,21 @@ b1.getDistance(self.car)
   - Find angle and distance between car model and other created URDF objects.
 
 #### Environment Generation: 
-1. Have camera lock and follow car. 
+1. <s>Have camera lock and follow car.</s> This is done! 
 2. Have objects be generated around car, rather than rigidly placed. 
+
+  
+### FINISHED 
+
+#### Realistic Car Model (PRIORITY): 
+
+1. Find open source or build a more realistic URDF car model. 
+  -  <i>This should have Ackerman steering and friction between components. Maybe even a driveshaft and steering column!</i>
+2. a Action
+  - Continuous application of torque to steering column adjust wheel angle. 
+  - Continuous application of torque to driveshaft to adjust car velocity.   
+2. b Observation
+  - Obtain car speed and wheel positions or angle from model.
 
 #### Environment Optimization: 
 1. Set PyBullet client of p.DIRECT. Render using TinyRenderer rather than OpenGL.
