@@ -33,9 +33,13 @@ class DrivingEnv(gym.Env):
     def __init__(self, action_space):
         # Set up action space, observation space and reward range
         self.action_space = action_space
+        car_low = np.array([-float('inf'), -float('inf'), -1, -1, -5, -5, -.7])
+        car_high = np.array([float('inf'), float('inf'), 1, 1, 5, 5, .7])
+        lidar_low = np.array([0.0 for i in range(30)])
+        lidar_high = np.array([1.0 for i in range(30)])
         self.observation_space = spaces.Box(
-            low=np.array([-float('inf'), -float('inf'), -1, -1, -5, -5, -.7]),
-            high=np.array([float('inf'), float('inf'), 1, 1, 5, 5, .7]),
+            low=np.concatenate((car_low, lidar_low)),
+            high=np.concatenate((car_high, lidar_high)),
             dtype=np.float32)
         
         # Connect client and initialize random 

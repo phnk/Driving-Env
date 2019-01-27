@@ -11,11 +11,6 @@ def main():
     env = gym.make('DrivingContinuous-v0')
     env.seed(0)
     env.reset() 
-    for _ in range(200): 
-        env.step(np.array([1, 0, 0]))
-    for _ in range(500): 
-        env.step(np.array([1, 1, 0]))
-    '''
     for _ in range(100): 
         ob, _, _, _ = env.step(np.array([1, 0, 0]))
         env.render()
@@ -25,7 +20,6 @@ def main():
     for _ in range(100): 
         ob, _, _, _ = env.step(np.array([1, 0, -0.3]))
         env.render()
-    '''
     env.close()
 
     '''
