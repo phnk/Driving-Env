@@ -15,6 +15,8 @@ from gym_driving.resources import getResourcePath
 import gym_driving.resources._helper_functions as helper
 import gym_driving.resources._car as car
 
+import matplotlib.pyplot as plt
+
 class DrivingEnv(gym.Env):
     '''
     Base class for continuous and discrete action environments. 
@@ -29,19 +31,21 @@ class DrivingEnv(gym.Env):
     metadata = {'render.modes': ['human']}
     
     def __init__(self, action_space):
-        # Determines the dimensions of the returned observation vector
-        self.observation_features = (5,)
-
         # Set up action space, observation space and reward range
         self.action_space = action_space
-        self.observation_space = spaces.Box(1e8, 1e8, self.observation_features,
-                                            dtype=np.float32)
-        self.reward_range = (-1, 100)
+        self.observation_space = spaces.Box(
+            low=np.array([-float('inf'), -float('inf'), -1, -1, -5, -5, -.7]),
+            high=np.array([float('inf'), float('inf'), 1, 1, 5, 5, .7]),
+            dtype=np.float32)
         
         # Connect client and initialize random 
-        self.client = p.connect(p.GUI)
+        self.client = p.connect(p.DIRECT)
         self.random = np.random.RandomState()
         self.seed()
+
+        # Set image for rendering
+        self.imgsize = 100
+        self.img = plt.imshow(np.zeros((self.imgsize, self.imgsize, 4)))
                                            
     def step(self, action): 
         '''
@@ -64,7 +68,9 @@ class DrivingEnv(gym.Env):
         self._apply_action(action) 
         p.stepSimulation()
 
-        # Compute observation 
+        # Retrieve observation
+        observation = self.car.get_observation()
+        
         # Compute reward 
         # Compute done 
         # return np array observation, reward, done, {} 
@@ -80,7 +86,28 @@ class DrivingEnv(gym.Env):
         self.car = car.Car(self.client)
 
     def render(self, mode='human', close=False):
-        pass 
+        # Base information
+        size = 100
+        car_id, client_id = self.car.get_ids()
+        proj_matrix = p.computeProjectionMatrixFOV(fov=60, aspect=1, 
+            nearVal=0.01, farVal=100)
+        pos, ori = [list(l) for l in 
+            p.getBasePositionAndOrientation(car_id, client_id)]
+        pos[2] = 0.2
+        
+        # Rotate camera direction
+        rotation_matrix = np.array(p.getMatrixFromQuaternion(ori)).reshape(3, 3)
+        camera_vec = np.matmul(rotation_matrix, [1, 0, 0])
+        up_vec = np.matmul(rotation_matrix, np.array([0, 0, 1]))
+        view_matrix = p.computeViewMatrix(pos, pos + camera_vec, up_vec)
+
+        # Display image
+        frame = p.getCameraImage(self.imgsize, self.imgsize, view_matrix, 
+            proj_matrix)[2].reshape(self.imgsize, self.imgsize, 4) 
+        self.img.set_data(frame)
+        plt.draw()
+        plt.pause(.003)
+
 
     def close(self):
         ''' 
@@ -115,5 +142,4 @@ class DrivingEnv(gym.Env):
         '''
         Applies an action to the agent. Overridden by child classes.
         '''
-        pass
-
+        raise NotImplementedError('Must implement _apply_action in subclass.')
