@@ -65,7 +65,14 @@ b1.getDistance(self.car)
 2. Have objects be generated around car, rather than rigidly placed. 
 
   
-### FINISHED 
+### FINISHED: 
+
+#### Lidar Observation (PRIORITY): 
+
+1. Create a lidar based collision observation model using ray casts. 
+  - Segmented observations in arc around car. 
+  - Sense objects with detectable collision zones. 
+  - Update car and environment observations. 
 
 #### Realistic Car Model (PRIORITY): 
 
