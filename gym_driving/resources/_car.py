@@ -4,6 +4,7 @@ Contains Car class.
 # External resources
 import pybullet as p 
 import numpy as np
+import math
 # Local resources
 from gym_driving.resources import _helper_functions as helper
 from gym_driving.resources import getResourcePath
@@ -25,6 +26,11 @@ class Car:
             basePosition=[0, 0, 0],
             physicsClientId=self.client)
 
+        ids = p.loadURDF(
+            fileName=getResourcePath('racecar/racecar.urdf'),
+            basePosition=[1, 1, 0],
+            physicsClientId=self.client)
+
         # Joint indices for racecar/racecar.urdf
         self.joint_indices = { 
             'left_steering': 4, 
@@ -43,7 +49,17 @@ class Car:
 
         self.num_drive_wheels = len(self.drive_wheels)
         self.joint_speed = 0
-        self.t = 0
+
+        # Max-min range of lidar
+        self.lidar_range = 10
+        self.min_lidar_range = 0.2
+        # Angle covered by lidar 
+        self.view_range = 180
+        # Number of segments within covered area
+        self.num_seg = 10
+        
+        # Determine ray start and end given above parameters
+        self._init_lidar()
 
     def get_ids(self): 
         ''' 
@@ -114,7 +130,6 @@ class Car:
             forces=[1.2] * self.num_drive_wheels,
             physicsClientId=self.client)
 
-
     def get_observation(self): 
         '''
         Returns an observation.
@@ -173,4 +188,53 @@ class Car:
                         np.sin(angle[2]) * np.cos(angle[1])])
         pos = np.array(pos_ori[0][:2])
         return pos, ori
+
+    def get_lidar(self): 
+        '''
+        Returns lidar observation.
+        '''
+        batch = p.rayTestBatch(self.start_rays, self.end_rays, self.car, 
+            9, self.client)
+        for laser in batch: 
+            print(laser[0], end=' ')
+        print()
+        lidar_ob = np.zeros(self.num_seg)
+        ray_per_zone = self.num_rays // self.num_seg
+        for zone in range(self.num_seg): 
+            for ray in range(ray_per_zone):
+                if batch[zone * ray_per_zone + ray][0] != -1: 
+                    score = 1 - batch[zone * ray_per_zone + ray][2] 
+                    lidar_ob[zone] = max(lidar_ob[zone], score)
+        # print([round(i, 1) for i in lidar_ob])
+
+    def _init_lidar(self): 
+        ''' 
+        Performs computations to set up lidar beams. 
+        '''
+        # Number of rays in lidar
+        self.num_rays = math.ceil(int(self.view_range / 5) / self.num_seg) * \
+            self.num_seg
+        # Initialize start and end of rays given params
+        starting_degree = -(self.view_range - self.view_range / 2) + 90
+        change_degree = self.view_range / self.num_rays
+        self.start_rays = [
+            [self.min_lidar_range
+             * math.sin(math.radians(starting_degree + i * change_degree)),
+             self.min_lidar_range
+             * math.cos(math.radians(starting_degree + i * change_degree)),
+             0.05] for i in range(self.num_rays)]
+        self.end_rays = [
+            [self.lidar_range * 
+             math.sin(math.radians(starting_degree + i * change_degree)),
+             self.lidar_range * 
+             math.cos(math.radians(starting_degree + i * change_degree)),
+             0.05] for i in range(self.num_rays)]
+
+    def _debug_lidar(self): 
+        '''
+        Displays lidar sweeps in p.GUI client.
+        '''
+        for s, e in zip(self.start_rays, self.end_rays):
+            p.addUserDebugLine(s, e, [1, 0, 0], parentObjectUniqueId=self.car, 
+                parentLinkIndex=9, lifeTime=0.3)
 

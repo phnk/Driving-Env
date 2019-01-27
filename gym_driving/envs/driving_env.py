@@ -86,6 +86,9 @@ class DrivingEnv(gym.Env):
         self.car = car.Car(self.client)
 
     def render(self, mode='human', close=False):
+
+        self.car.get_lidar()
+
         # Base information
         size = 100
         car_id, client_id = self.car.get_ids()
