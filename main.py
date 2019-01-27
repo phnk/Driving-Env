@@ -13,17 +13,20 @@ def main():
     env.reset() 
     for _ in range(200): 
         env.step(np.array([1, 0, 0]))
+    for _ in range(500): 
+        env.step(np.array([1, 1, 0]))
+    '''
+    for _ in range(100): 
+        ob, _, _, _ = env.step(np.array([1, 0, 0]))
         env.render()
-    for _ in range(200): 
-        env.step(np.array([0.2, 0, 0.3]))
+    for _ in range(50): 
+        ob, _, _, _ = env.step(np.array([0.5, 0, 0.6]))
         env.render()
-
-
+    for _ in range(100): 
+        ob, _, _, _ = env.step(np.array([1, 0, -0.3]))
+        env.render()
+    '''
     env.close()
-
-    # Note - running both visually bugs as PyBullet only 
-    # allows one GUI client. This will be fixed with the 
-    # p.DIRECT port. 
 
     '''
     # Discrete environment 

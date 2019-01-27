@@ -4,6 +4,7 @@ Contains Car class.
 # External resources
 import pybullet as p 
 import numpy as np
+import math
 # Local resources
 from gym_driving.resources import _helper_functions as helper
 from gym_driving.resources import getResourcePath
@@ -43,7 +44,15 @@ class Car:
 
         self.num_drive_wheels = len(self.drive_wheels)
         self.joint_speed = 0
-        self.t = 0
+
+        # Max-min range of lidar
+        self.lidar_range = 20
+        self.min_lidar_range = 0.2
+        # Number of segments within covered area
+        self.num_seg = 30
+        
+        # Determine ray start and end given above parameters
+        self._init_lidar()
 
     def get_ids(self): 
         ''' 
@@ -67,14 +76,13 @@ class Car:
         action : float, float, float
             Throttle [0, 1], break [0, 1], steering position [-0.6, 0.6].
         '''
-        
         # Speed parameters
         throttle = action[0]
         breaking = action[1]
-        max_torque = 120
-        c_drag = 0.02
-        c_rolling = 0.5
-        c_break = -50
+        max_torque = 150
+        c_drag = 0.01
+        c_rolling = 0.3
+        c_break = -125
         simulation_step = 0.004 
 
         # Calculate speed with friction 
@@ -114,7 +122,6 @@ class Car:
             forces=[1.2] * self.num_drive_wheels,
             physicsClientId=self.client)
 
-
     def get_observation(self): 
         '''
         Returns an observation.
@@ -133,7 +140,8 @@ class Car:
             self.joint_indices['left_steering'], self.client)[0] + 
             p.getJointState(self.car, self.joint_indices['right_steering'], 
             self.client)[0]) / 2).reshape(-1)
-        return np.concatenate((pos, ori, vel, avg_wheel_angle))
+        lidar = self.get_lidar()
+        return np.concatenate((pos, ori, vel, avg_wheel_angle, lidar))
 
         
     def get_speed(self): 
@@ -173,4 +181,78 @@ class Car:
                         np.sin(angle[2]) * np.cos(angle[1])])
         pos = np.array(pos_ori[0][:2])
         return pos, ori
+
+        # Max-min range of lidar
+        self.lidar_range = 20
+        self.min_lidar_range = 0.2
+        # Number of segments within covered area
+        self.num_seg = 30
+
+    def get_lidar(self): 
+        '''
+        Returns lidar observation.
+
+        Breaks region around car into number of segments specified in 
+        init as self.num_seg, returning an array of self.num_seg 
+        length. The value in each region is a score of [0, 1], with 
+        regions containing objects closer to the car having a score 
+        closer to 1. 
+
+        E.G. Region [0] has an object very close, it's score is 0.94. 
+        Region [1] has an object near the edge of lidar detection, its
+        score is 0.01. 
+
+        Regions that are clear of objects will have a score of 0. 
+        
+        Returns
+        -------
+        np.ndarray
+            The scores for each region as described above.
+        '''
+        sensor_info = p.getLinkState(self.car, 8, computeForwardKinematics=True,
+            physicsClientId=self.client)
+        pos = np.array(sensor_info[0])
+        batch = p.rayTestBatch(self.start_rays + pos, self.end_rays + pos, 
+            self.car, 9, self.client)
+        lidar_ob = np.zeros(self.num_seg)
+        ray_per_zone = self.num_rays // self.num_seg
+        for zone in range(self.num_seg): 
+            for ray in range(ray_per_zone):
+                if batch[zone * ray_per_zone + ray][0] != -1: 
+                    score = 1 - batch[zone * ray_per_zone + ray][2] 
+                    lidar_ob[zone] = max(lidar_ob[zone], score)
+        return lidar_ob
+
+    def _init_lidar(self): 
+        ''' 
+        Performs computations to set up lidar beams. 
+        '''
+        # Number of rays in lidar
+        self.num_rays = (math.ceil(24 * self.lidar_range) //
+            self.num_seg * self.num_seg)
+        # Initialize start and end of rays given params
+        starting_degree = -90
+        change_degree = 360 / self.num_rays
+        self.start_rays = [
+            np.array([self.min_lidar_range
+             * math.sin(math.radians(starting_degree + i * change_degree)),
+             self.min_lidar_range
+             * math.cos(math.radians(starting_degree + i * change_degree)),
+             0.0]) for i in range(self.num_rays)]
+        self.end_rays = [
+            np.array([self.lidar_range * 
+             math.sin(math.radians(starting_degree + i * change_degree)),
+             self.lidar_range * 
+             math.cos(math.radians(starting_degree + i * change_degree)),
+             0.0]) for i in range(self.num_rays)]
+        self.start_rays = np.array(self.start_rays)
+        self.end_rays = np.array(self.end_rays)
+
+    def _debug_lidar(self): 
+        '''
+        Displays lidar sweeps in p.GUI client.
+        '''
+        for s, e in zip(self.start_rays, self.end_rays):
+            p.addUserDebugLine(s, e, [1, 0, 0], parentObjectUniqueId=self.car, 
+                parentLinkIndex=8, lifeTime=0.5)
 

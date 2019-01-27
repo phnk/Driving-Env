@@ -74,6 +74,7 @@ class DrivingEnv(gym.Env):
         # Compute reward 
         # Compute done 
         # return np array observation, reward, done, {} 
+        return observation, None, None, dict()
 
     def reset(self):
         ''' 
@@ -86,6 +87,9 @@ class DrivingEnv(gym.Env):
         self.car = car.Car(self.client)
 
     def render(self, mode='human', close=False):
+
+        self.car.get_lidar()
+
         # Base information
         size = 100
         car_id, client_id = self.car.get_ids()
@@ -106,7 +110,7 @@ class DrivingEnv(gym.Env):
             proj_matrix)[2].reshape(self.imgsize, self.imgsize, 4) 
         self.img.set_data(frame)
         plt.draw()
-        plt.pause(.003)
+        plt.pause(.001)
 
 
     def close(self):
