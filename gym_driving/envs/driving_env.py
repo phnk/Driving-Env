@@ -74,6 +74,7 @@ class DrivingEnv(gym.Env):
         # Compute reward 
         # Compute done 
         # return np array observation, reward, done, {} 
+        return observation, None, None, dict()
 
     def reset(self):
         ''' 
@@ -109,7 +110,7 @@ class DrivingEnv(gym.Env):
             proj_matrix)[2].reshape(self.imgsize, self.imgsize, 4) 
         self.img.set_data(frame)
         plt.draw()
-        plt.pause(.003)
+        plt.pause(.001)
 
 
     def close(self):
