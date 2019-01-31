@@ -1,0 +1,27 @@
+ <link name="my_link">
+   <inertial>
+     <origin xyz="0 0 0.5" rpy="0 0 0"/>
+     <mass value="3"/>
+     <inertia ixx="100"  ixy="0"  ixz="0" iyy="100" iyz="0" izz="100" />
+   </inertial>
+
+    #figure out meshes next (how to create one)
+      #once mesh is created, use:
+      <mesh filename="package://gym_driving/resource/trafficCone.stl" scale="1 1 1"/>
+   <visual name="cylinder">
+     <origin xyz="0 0 0" rpy="0 0 0" />
+     <geometry>
+       <cylinder radius="1" length="4"  />
+     </geometry>
+     <material name="Orange">
+       <color rgba="1.0 0.5 0 1.0"/>
+     </material>
+   </visual>
+
+   <collision>
+     <origin xyz="0 0 0" rpy="0 0 0"/>
+     <geometry>
+       <cylinder radius="1" length="4"/>
+     </geometry>
+   </collision>
+ </link>
