@@ -14,8 +14,9 @@ def main():
     b = p.addUserDebugParameter('Break Position', 0, 1, 0)
     s = p.addUserDebugParameter('Steering Position', -.6, .6, 0)
     quit = p.addUserDebugParameter('Quit', 0, .01, 0)
-    c = car.Car()
+    c = car.Car(10)
     a = p.loadURDF(getResourcePath('plane/plane.urdf'))
+    p.loadURDF(getResourcePath('racecar/racecar.urdf'), basePosition=[2, 2, 0])
     count = 0
     while True: 
         count += 1
@@ -28,10 +29,10 @@ def main():
             quit()
         c.apply_action([throttle, breaking, steer])
         p.stepSimulation()
-        if count % 20 == 0: 
-            c.get_lidar()
-
-        time.sleep(0.004) 
+        if count % 100 == 0: 
+            ob = c.get_lidar()
+            print([round(i, 1) for i in ob])
+        time.sleep(0.001) 
 
 
 
