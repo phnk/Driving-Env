@@ -32,12 +32,10 @@ def main():
             quit()
         c.apply_action([throttle, breaking, steer])
         p.stepSimulation()
-        if count % 100 == 0: 
-            ob = c.get_lidar()
-            print([round(i, 1) for i in ob])
+        col = c.get_collision()
+        if col: 
+            print('collision')
         time.sleep(0.001) 
-
-
 
 if __name__ == '__main__': 
     main()

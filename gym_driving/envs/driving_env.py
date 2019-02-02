@@ -78,10 +78,13 @@ class DrivingEnv(gym.Env):
         # Retrieve observation
         observation = self.car.get_observation()
         
+        # Retrieve done status
+        done = self._get_done()
+        
         # Compute reward 
         # Compute done 
         # return np array observation, reward, done, {} 
-        return observation, None, None, dict()
+        return observation, None, done, dict()
 
     def reset(self):
         ''' 
@@ -144,9 +147,14 @@ class DrivingEnv(gym.Env):
         spaces.prng.seed(seeding.create_seed(seed, max_bytes=4))
         # Return seed used  
         return seed
+
+    def _get_done(self): 
+        return self.car.get_collision()
     
     def _apply_action(self, action): 
         '''
         Applies an action to the agent. Overridden by child classes.
         '''
         raise NotImplementedError('Must implement _apply_action in subclass.')
+
+

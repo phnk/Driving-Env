@@ -165,6 +165,19 @@ class Car:
         '''
         return np.array(p.getBaseVelocity(self.car, self.client)[0])[0:2]
 
+    def get_collision(self): 
+        ''' 
+        Returns true if collided, false if no collision. 
+
+        Returns
+        -------
+        bool 
+        Status of collision of car. 
+        '''
+        contact = p.getContactPoints(bodyA=self.car, linkIndexA=0)
+        return True if len(contact) else False
+
+
     def get_position_orientation(self, angle=False): 
         ''' 
         Returns position and unit orientation in x, y coordinates.
@@ -269,3 +282,48 @@ class Car:
             p.addUserDebugLine(s, e, [1, 0, 0], parentObjectUniqueId=self.car, 
                 parentLinkIndex=8, lifeTime=0.5)
 
+
+def drawAABB(aabbMin, aabbMax):
+	f = [aabbMin[0],aabbMin[1],aabbMin[2]]
+	t = [aabbMax[0],aabbMin[1],aabbMin[2]]
+	p.addUserDebugLine(f,t,[1,0,0], lifeTime=0.5)
+	f = [aabbMin[0],aabbMin[1],aabbMin[2]]
+	t = [aabbMin[0],aabbMax[1],aabbMin[2]]
+	p.addUserDebugLine(f,t,[0,1,0], lifeTime=0.5)
+	f = [aabbMin[0],aabbMin[1],aabbMin[2]]
+	t = [aabbMin[0],aabbMin[1],aabbMax[2]]
+	p.addUserDebugLine(f,t,[0,0,1], lifeTime=0.5)
+
+	f = [aabbMin[0],aabbMin[1],aabbMax[2]]
+	t = [aabbMin[0],aabbMax[1],aabbMax[2]]
+	p.addUserDebugLine(f,t,[1,1,1], lifeTime=0.5)
+
+	f = [aabbMin[0],aabbMin[1],aabbMax[2]]
+	t = [aabbMax[0],aabbMin[1],aabbMax[2]]
+	p.addUserDebugLine(f,t,[1,1,1], lifeTime=0.5)
+
+	f = [aabbMax[0],aabbMin[1],aabbMin[2]]
+	t = [aabbMax[0],aabbMin[1],aabbMax[2]]
+	p.addUserDebugLine(f,t,[1,1,1], lifeTime=0.5)
+
+	f = [aabbMax[0],aabbMin[1],aabbMin[2]]
+	t = [aabbMax[0],aabbMax[1],aabbMin[2]]
+	p.addUserDebugLine(f,t,[1,1,1], lifeTime=0.5)
+
+	f = [aabbMax[0],aabbMax[1],aabbMin[2]]
+	t = [aabbMin[0],aabbMax[1],aabbMin[2]]
+	p.addUserDebugLine(f,t,[1,1,1], lifeTime=0.5)
+
+	f = [aabbMin[0],aabbMax[1],aabbMin[2]]
+	t = [aabbMin[0],aabbMax[1],aabbMax[2]]
+	p.addUserDebugLine(f,t,[1,1,1], lifeTime=0.5)
+
+	f = [aabbMax[0],aabbMax[1],aabbMax[2]]
+	t = [aabbMin[0],aabbMax[1],aabbMax[2]]
+	p.addUserDebugLine(f,t,[1.0,0.5,0.5], lifeTime=0.5)
+	f = [aabbMax[0],aabbMax[1],aabbMax[2]]
+	t = [aabbMax[0],aabbMin[1],aabbMax[2]]
+	p.addUserDebugLine(f,t,[1,1,1], lifeTime=0.5)
+	f = [aabbMax[0],aabbMax[1],aabbMax[2]]
+	t = [aabbMax[0],aabbMax[1],aabbMin[2]]
+	p.addUserDebugLine(f,t,[1,1,1], lifeTime=0.5)
