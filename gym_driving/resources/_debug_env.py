@@ -3,6 +3,7 @@ import pybullet as p
 from gym_driving.resources import getResourcePath
 import gym_driving.resources._helper_functions as helper
 import gym_driving.resources._car as car
+import gym_driving.resources._cube as cube
 import time
 
 
@@ -17,6 +18,8 @@ def main():
     c = car.Car(10)
     a = p.loadURDF(getResourcePath('plane/plane.urdf'))
     p.loadURDF(getResourcePath('racecar/racecar.urdf'), basePosition=[2, 2, 0])
+    for i in range(1, 6): 
+        cube.Cube([-i/2, -i/2, 0], size=i)
     count = 0
     while True: 
         count += 1
