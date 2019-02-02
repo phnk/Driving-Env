@@ -31,12 +31,15 @@ class DrivingEnv(gym.Env):
     metadata = {'render.modes': ['human']}
     
     def __init__(self, action_space):
+        # Number of lidar segments for car 
+        self.lidar_seg = 20
+
         # Set up action space, observation space and reward range
         self.action_space = action_space
         car_low = np.array([-float('inf'), -float('inf'), -1, -1, -5, -5, -.7])
         car_high = np.array([float('inf'), float('inf'), 1, 1, 5, 5, .7])
-        lidar_low = np.array([0.0 for i in range(30)])
-        lidar_high = np.array([1.0 for i in range(30)])
+        lidar_low = np.array([0.0 for i in range(self.lidar_seg)])
+        lidar_high = np.array([1.0 for i in range(self.lidar_seg)])
         self.observation_space = spaces.Box(
             low=np.concatenate((car_low, lidar_low)),
             high=np.concatenate((car_high, lidar_high)),
@@ -88,12 +91,9 @@ class DrivingEnv(gym.Env):
         p.setGravity(0,0,-10)
         self.plane = p.loadURDF(getResourcePath('plane/plane.urdf'), 
             physicsClientId=self.client)
-        self.car = car.Car(self.client)
+        self.car = car.Car(self.lidar_seg, client=self.client)
 
     def render(self, mode='human', close=False):
-
-        self.car.get_lidar()
-
         # Base information
         size = 100
         car_id, client_id = self.car.get_ids()
@@ -115,7 +115,6 @@ class DrivingEnv(gym.Env):
         self.img.set_data(frame)
         plt.draw()
         plt.pause(.001)
-
 
     def close(self):
         ''' 

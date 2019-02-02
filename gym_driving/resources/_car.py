@@ -18,7 +18,7 @@ class Car:
     client : int, optional 
         PyBullet client to attach to, default of 0. 
     '''
-    def __init__(self, client=0): 
+    def __init__(self, lidar_seg, client=0): 
         # Set client, load car 
         self.client = client 
         self.car = p.loadURDF(
@@ -46,10 +46,10 @@ class Car:
         self.joint_speed = 0
 
         # Max-min range of lidar
-        self.lidar_range = 20
+        self.lidar_range = 15
         self.min_lidar_range = 0.2
         # Number of segments within covered area
-        self.num_seg = 30
+        self.num_seg = lidar_seg
         
         # Determine ray start and end given above parameters
         self._init_lidar()
@@ -134,15 +134,14 @@ class Car:
         position(2), orientation(2), velocity(2), wheel angle 
         [-inf, inf], [-1, 1], [-5, 5], [-.7, .7]
         '''
-        pos, ori = self.get_position_orientation() 
+        pos, ori, angle = self.get_position_orientation(True) 
+        lidar = self.get_lidar(angle)
         vel = self.get_velocity()
         avg_wheel_angle = np.array((p.getJointState(self.car,
             self.joint_indices['left_steering'], self.client)[0] + 
             p.getJointState(self.car, self.joint_indices['right_steering'], 
             self.client)[0]) / 2).reshape(-1)
-        lidar = self.get_lidar()
         return np.concatenate((pos, ori, vel, avg_wheel_angle, lidar))
-
         
     def get_speed(self): 
         ''' 
@@ -166,29 +165,30 @@ class Car:
         '''
         return np.array(p.getBaseVelocity(self.car, self.client)[0])[0:2]
 
-    def get_position_orientation(self): 
+    def get_position_orientation(self, angle=False): 
         ''' 
-        Returns position and unit orientation of car in x, y.
+        Returns position and unit orientation in x, y coordinates.
 
+        Parameters 
+        ----------
+        angle : boolean, optional
+            If true, also returns the angle of the car in radians.
         Returns 
         -------
+        angle : False
         np.ndarray, np.ndarray
-        Position and unit orientation of car in x, y coordinates.  
+        Position, orientation car in x, y coordinates
+
+        angle : True
+        np.ndarray, np.ndarray, int
+        Position, orientation car in x, y coordinates, angle of car
         '''
-        pos_ori = p.getBasePositionAndOrientation(self.car, self.client)
-        angle = p.getEulerFromQuaternion(pos_ori[1])
-        ori = np.array([np.cos(angle[2]) * np.cos(angle[1]), 
-                        np.sin(angle[2]) * np.cos(angle[1])])
-        pos = np.array(pos_ori[0][:2])
-        return pos, ori
+        pos, ang = p.getBasePositionAndOrientation(self.car, self.client)
+        ang = p.getEulerFromQuaternion(ang)
+        ori = np.array([math.cos(ang[2]), math.sin(ang[2])])
+        return (pos[:2], ori, angle) if angle else (pos[:2], ori)
 
-        # Max-min range of lidar
-        self.lidar_range = 20
-        self.min_lidar_range = 0.2
-        # Number of segments within covered area
-        self.num_seg = 30
-
-    def get_lidar(self): 
+    def get_lidar(self, angle=None): 
         '''
         Returns lidar observation.
 
@@ -203,12 +203,21 @@ class Car:
         score is 0.01. 
 
         Regions that are clear of objects will have a score of 0. 
+
+        Parameters
+        ----------
+        angle : int, optional 
+            Optionally pass angle of car in radians to prevent overhead
+            of additional call to get angle of car. 
         
         Returns
         -------
         np.ndarray
             The scores for each region as described above.
         '''
+        if angle is None: 
+            angle = p.getEulerFromQuaternion(
+                p.getBasePositionAndOrientation(self.car, self.client)[1])[2]
         sensor_info = p.getLinkState(self.car, 8, computeForwardKinematics=True,
             physicsClientId=self.client)
         pos = np.array(sensor_info[0])
@@ -216,10 +225,14 @@ class Car:
             self.car, 9, self.client)
         lidar_ob = np.zeros(self.num_seg)
         ray_per_zone = self.num_rays // self.num_seg
+        offset = -int((angle / math.pi) * self.num_rays / 2)
         for zone in range(self.num_seg): 
             for ray in range(ray_per_zone):
-                if batch[zone * ray_per_zone + ray][0] != -1: 
-                    score = 1 - batch[zone * ray_per_zone + ray][2] 
+                index = ((zone * ray_per_zone + ray) + offset)
+                if index >= len(batch): 
+                    index %= len(batch)
+                if batch[index][0] != -1: 
+                    score = 1 - batch[index][2] 
                     lidar_ob[zone] = max(lidar_ob[zone], score)
         return lidar_ob
 
