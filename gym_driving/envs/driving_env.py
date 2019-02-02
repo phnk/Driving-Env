@@ -114,7 +114,7 @@ class DrivingEnv(gym.Env):
             proj_matrix)[2].reshape(self.imgsize, self.imgsize, 4) 
         self.img.set_data(frame)
         plt.draw()
-        plt.pause(.001)
+        plt.pause(.00001)
 
     def close(self):
         ''' 
