@@ -28,6 +28,14 @@
       </geometry>
       <material name="blue"/>
     </visual>
+    <!-- Used for bounding box -->
+    <collision>
+      <origin rpy="0 0 1.5708"  xyz="0.19 0 0.05"/>
+      <geometry>
+        <box size="0.3 0.5 0.1"/>
+      </geometry>
+    </collision>
+
   </link>
   <joint name="base_link_joint" type="fixed">
     <origin rpy="0 0 0" xyz="0 0 0.05"/>
@@ -61,8 +69,6 @@
       <material name="white"/>
     </visual>
     <collision>
-      robot
-      
       <origin rpy="0 0 0" xyz="0 0 -0.0225"/>
       <geometry>
         <cylinder length="0.045" radius="0.05"/>
