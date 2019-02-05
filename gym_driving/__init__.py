@@ -5,9 +5,6 @@ from gym.envs.registration import register
 
 register(
     id='Driving-v0', 
-    entry_point='gym_driving.envs:DrivingEnvDiscrete',
+    entry_point='gym_driving.envs:DrivingEnv',
     )
-register(
-    id='DrivingContinuous-v0', 
-    entry_point='gym_driving.envs:DrivingEnvContinuous',
-    )
+

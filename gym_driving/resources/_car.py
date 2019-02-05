@@ -175,7 +175,7 @@ class Car:
         Status of collision of car. 
         '''
         contact = p.getContactPoints(bodyA=self.car, linkIndexA=0,
-            physicClientId=self.client)
+            physicsClientId=self.client)
         return True if len(contact) else False
 
     def get_position_orientation(self, angle=False): 
