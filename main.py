@@ -14,15 +14,18 @@ def main():
 
     for _ in range(100): 
         ob, _, done, info = env.step(np.array([1, 0, 0]))
-        print(ob)
+        # Prints only lidar from observation
+        print([round(i, 2) for i in ob[-10:]])
         env.render()
     for _ in range(100): 
         ob, _, done, info = env.step(np.array([0.5, 0, 0.6]))
-        print(ob)
+        # Prints only lidar from observation
+        print([round(i, 2) for i in ob[-10:]])
         env.render()
     for _ in range(100): 
         ob, _, done, info = env.step(np.array([1, 0, -0.3]))
-        print(ob)
+        # Prints only lidar from observation
+        print([round(i, 2) for i in ob[-10:]])
         env.render()
     env.close()
 

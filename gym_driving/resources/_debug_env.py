@@ -36,6 +36,7 @@ def main():
         col = c.get_collision()
         if col: 
             print('collision')
+        print(c.get_position_orientation(True)[2])
         #if count % 100 == 0: 
         #    c._debug_lidar()
         #    print(c.get_lidar())

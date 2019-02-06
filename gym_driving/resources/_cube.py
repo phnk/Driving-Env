@@ -30,7 +30,7 @@ class Cube:
             basePosition=position, 
             physicsClientId=self.client)
 
-     def get_ids(self): 
+    def get_ids(self): 
         ''' 
         Returns tuple of (bodyid, clientid) of underlying cube. 
 

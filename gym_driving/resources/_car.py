@@ -186,20 +186,22 @@ class Car:
         ----------
         angle : boolean, optional
             If true, also returns the angle of the car in radians.
+
         Returns 
         -------
-        angle : False
+            angle : False
         np.ndarray, np.ndarray
         Position, orientation car in x, y coordinates
 
-        angle : True
-        np.ndarray, np.ndarray, int
-        Position, orientation car in x, y coordinates, angle of car
+            angle : True
+        np.ndarray, np.ndarray, float
+        Position, orientation car in x, y coordinates, angle of car.
+        Angle is between [-pi, pi]. 
         '''
         pos, ang = p.getBasePositionAndOrientation(self.car, self.client)
         ang = p.getEulerFromQuaternion(ang)
         ori = np.array([math.cos(ang[2]), math.sin(ang[2])])
-        return (pos[:2], ori, angle) if angle else (pos[:2], ori)
+        return (pos[:2], ori, ang[2]) if angle else (pos[:2], ori)
 
     def get_lidar(self, angle=None): 
         '''
