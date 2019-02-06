@@ -23,15 +23,18 @@ Edit class DrivingEnv in gym_driving/envs/driving_env.py
 
 Add any additional resources gym_driving/resources/.
 
-### Development Notes: 
 Please add any local URDFs under gym_driving/resources. Use getResourcePath 
 (this is already imported in driving_env) with the filename when loading the
 URDF to get a system independent path. 
 
-
 ### TODO: 
 
-To be updated. 
+#### Task based environments: 
+1. Environment with a reward function and concrete task. 
+  - Inherit from DrivingEnv and override the _get_observation() and reset() methods. 
+  - Build the environment in reset(). 
+  - Return specific observations in _get_observation() (EG the location of a goal). 
+2. Any environment you can think of! 
 
   
 ### FINISHED: 
