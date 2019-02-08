@@ -21,12 +21,12 @@ class Cube:
     # Supported sizes
     sizes = {1, 2, 3, 4, 5}
 
-    def __init__(self, position=[0, 0, 0], size=1, client=0): 
-        assert size in Cube.sizes, f'Unsupported size {size} for Cube.'
+    def __init__(self, position=[0, 0, 0], size=1, client=0, color="1 1 1 1"): 
+        assert size in Cube.sizes, 'Unsupported size {size} for Cube.'
 
         self.client = client
         self.cube = p.loadURDF(
-            fileName=getResourcePath(f'cube/cube{size}.urdf'), 
+            fileName=getResourcePath('cube/cube1.urdf'), 
             basePosition=position, 
             physicsClientId=self.client)
 

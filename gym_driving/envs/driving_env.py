@@ -7,10 +7,12 @@ import gym
 from gym import error, spaces, utils
 from gym.utils import seeding
 # External libraries 
+import random
 import pybullet as p
 import pybullet_data 
 import numpy as np
 import matplotlib.pyplot as plt
+import dubins		# used in reward function
 # Local resources
 from gym_driving.resources import getResourcePath
 import gym_driving.resources._helper_functions as helper
@@ -77,6 +79,9 @@ class DrivingEnv(gym.Env):
         # Set image for rendering
         self.imgsize = 100
         self.img = plt.imshow(np.zeros((self.imgsize, self.imgsize, 4)))
+
+        # Target Position (x,y,theta)
+        self.target = (10, -5, 0)
                                            
     def step(self, action): 
         '''
@@ -108,9 +113,10 @@ class DrivingEnv(gym.Env):
         done = self._get_done()
         
         # Compute reward 
+        reward = self._get_reward(observation)
 
         # return observation, reward, done, {} 
-        return observation, None, done, dict()
+        return observation, reward, done, dict()
 
     def reset(self):
         ''' 
@@ -125,6 +131,9 @@ class DrivingEnv(gym.Env):
             physicsClientId=self.client)
         self.car = car.Car(self.lidar_seg, client=self.client)
         self.cube1 = cube.Cube([2.5, 0, 0], 4, self.client)
+        self.target = (random.randint(-15,15), random.randint(-15,15),\
+                       random.uniform(-3.14, 3.14)) #generate new target every time
+        self.marker = cube.Cube(self.target, 4, self.client) #marker for target
 
     def render(self, mode='human'):
         '''
@@ -230,12 +239,21 @@ class DrivingEnv(gym.Env):
         '''
         return self.car.get_observation()
 
-    def _get_reward(self): 
+    def _get_reward(self, obs):
         ''' 
         Retrieves reward of car.
 
         Returns
         -------
         float
+        Environment reward, -dubin's distance - (summation of lidar matrix
+         corresponding to obstacles around car)
         '''
-        return self.car.get_observation()
+        pos, ori, angle = self.car.get_position_orientation(True)
+        currPos = (pos[0], pos[1], angle)
+        targetPos = self.target #(x,y,theta) of target
+        if pos == targetPos: #reached target
+          return 100
+        distance = dubins.shortest_path(currPos, targetPos, 1).path_length() #dist
+        obstacle = obs[4].sum() #summation of lidar matrix:obstacles around car
+        return (-1)*(distance + obstacle)

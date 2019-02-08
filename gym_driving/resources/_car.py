@@ -134,7 +134,7 @@ class Car:
         position(2), orientation(2), velocity(2), wheel angle 
         [-inf, inf], [-1, 1], [-5, 5], [-.7, .7]
         '''
-        pos, ori, angle = self.get_position_orientation(True) 
+        pos, ori, angle = self.get_position_orientation(True)
         lidar = self.get_lidar(angle)
         vel = self.get_velocity()
         avg_wheel_angle = np.array((p.getJointState(self.car,
@@ -145,6 +145,7 @@ class Car:
         
     def get_speed(self): 
         ''' 
+
         Returns the speed of car in m/s. 
 
         Returns
