@@ -97,8 +97,7 @@ class DrivingEnv(gym.Env):
             the action is applied to the environment. 
         '''
         # Ensure action valid and call action 
-        assert self.action_space.contains(action), f'Action {action} taken,'\
-            ' but not in space.'
+        assert self.action_space.contains(action), 'Action {action} taken, but not in space.'
         self._apply_action(action) 
         p.stepSimulation()
 
@@ -228,5 +227,15 @@ class DrivingEnv(gym.Env):
         np.ndarray
         Environment observation, must abide to observation space 
         dimensions. 
+        '''
+        return self.car.get_observation()
+
+    def _get_reward(self): 
+        ''' 
+        Retrieves reward of car.
+
+        Returns
+        -------
+        float
         '''
         return self.car.get_observation()
