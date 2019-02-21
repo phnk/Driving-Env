@@ -26,7 +26,7 @@ class Cube:
 
         self.client = client
         self.cube = p.loadURDF(
-            fileName=getResourcePath('cube/cube1.urdf'), 
+            fileName=getResourcePath(f'cube/cube{size}.urdf'), 
             basePosition=position, 
             physicsClientId=self.client)
 

@@ -7,7 +7,6 @@ import gym
 from gym import error, spaces, utils
 from gym.utils import seeding
 # External libraries 
-import random
 import pybullet as p
 import pybullet_data 
 import numpy as np
@@ -102,7 +101,8 @@ class DrivingEnv(gym.Env):
             the action is applied to the environment. 
         '''
         # Ensure action valid and call action 
-        assert self.action_space.contains(action), 'Action {action} taken, but not in space.'
+        assert self.action_space.contains(action), f'Action {action} taken, '\
+            'but not in space.'
         self._apply_action(action) 
         p.stepSimulation()
 
@@ -115,7 +115,7 @@ class DrivingEnv(gym.Env):
         # Compute reward 
         reward = self._get_reward(observation)
 
-        # return observation, reward, done, {} 
+        # Return observation, reward, done, {} 
         return observation, reward, done, dict()
 
     def reset(self):
@@ -123,17 +123,23 @@ class DrivingEnv(gym.Env):
         Initialization to start simulation. Loads all proper objects. 
 
         Can be overridden by inheriting classes to create specific 
-        environment. 
+        environment. Can be called from super().reset() to just reset 
+        PyBullet client, gravity, plane, and car. 
         '''
-        p.resetSimulation()
+        # Default initialization of car, plane, and gravity 
+        p.resetSimulation(self.client)
         p.setGravity(0,0,-10)
         self.plane = p.loadURDF(getResourcePath('plane/plane.urdf'), 
             physicsClientId=self.client)
         self.car = car.Car(self.lidar_seg, client=self.client)
+
+
         self.cube1 = cube.Cube([2.5, 0, 0], 4, self.client)
-        self.target = (random.randint(-15,15), random.randint(-15,15),\
-                       random.uniform(-3.14, 3.14)) #generate new target every time
-        self.marker = cube.Cube(self.target, 4, self.client) #marker for target
+        # Generate new target every time
+        self.target = (self.random.randint(-15,15), self.random.randint(-15,15),
+                       self.random.uniform(-3.14, 3.14)) 
+        # Marker for target
+        self.marker = cube.Cube(self.target, 4, self.client) 
 
     def render(self, mode='human'):
         '''
@@ -251,9 +257,10 @@ class DrivingEnv(gym.Env):
         '''
         pos, ori, angle = self.car.get_position_orientation(True)
         currPos = (pos[0], pos[1], angle)
-        targetPos = self.target #(x,y,theta) of target
-        if pos == targetPos: #reached target
+        targetPos = self.target # (x,y,theta) of target
+        if pos == targetPos: # Reached target
           return 100
-        distance = dubins.shortest_path(currPos, targetPos, 1).path_length() #dist
-        obstacle = obs[4].sum() #summation of lidar matrix:obstacles around car
+        # Dist
+        distance = dubins.shortest_path(currPos, targetPos, 1).path_length() 
+        obstacle = obs[4].sum() # Summation of lidar matrix:obstacles around car
         return (-1)*(distance + obstacle)
