@@ -7,101 +7,65 @@ import gym
 # External libraries 
 import pybullet as p
 import numpy as np
-import dubins		    # Used in reward function
 # Local resources
-from gym_driving.resources import getResourcePath
 from gym_driving.envs.driving_env import DrivingEnv
 import gym_driving.resources._car as car
-import gym_driving.resources._cube as cube
 
 
 class Driving0(DrivingEnv):
     '''
-    Rewards to be determined - none for now. 
-
     action_space : spaces.Box
         np.ndarray of size 3. [0, 1], [0, 1], [-.6, .6] range. First
         feature is throttle, second is break, third is central steering
         angle. 
-
-    Parameters
-    ----------
-    additional_observation : tuple
-        Tuple of np.ndarray. Contains ranges of additional features 
-        for observation space. [0] should be low range, [1] should be 
-        high range of additional observations. Used if 
-        _get_observation() overridden by any inheriting classes. 
-
-        Example: 
-        Child environment has additional goal position of x, y returned
-        through _get_observation(). 
-        
-        low = np.array([-float('inf'), -float('inf')])
-        high = np.array([float('inf'), float('inf')])
-        super().__init__((low, high))
     '''
     metadata = {'render.modes': ['human']}
     
     def __init__(self, additional_observation=None):
         super().__init__()
+
+        self.done = False
+
+        # Reset observation space
+        low = np.array([-float('inf'), -float('inf'), -1, -1, -5, -5, -15, -15])
+        high = np.array([float('inf'), float('inf'), 1, 1, 5, 5, 15, 15])
+        self.observation_space = gym.spaces.Box(low=low, high=high, 
+            dtype=np.float32)
                                            
     def reset(self):
         ''' 
         Initialization to start simulation. Loads all proper objects. 
-
-        Can be overridden by inheriting classes to create specific 
-        environment. Can be called from super().reset() to just reset 
-        PyBullet client, gravity, plane, and car. 
         '''
         # Default initialization of car, plane, and gravity 
         super().reset()
 
-        self.cube1 = cube.Cube([2.5, 0, 0], 4, self.client)
         # Generate new target every time
-        self.target = (self.random.randint(-15,15), self.random.randint(-15,15),
-                       self.random.uniform(-3.14, 3.14)) 
-        # Marker for target
-        self.marker = cube.Cube(self.target, 4, self.client) 
+        self.target = np.array(
+            (self.random.randint(-15,15), self.random.randint(-15,15)))
 
     def _get_done(self): 
         ''' 
-        Returns true if car has collision. Can be overridden by 
-        other inheriting environments for specific done criteria. 
+        Returns true if car reaches goal.
 
         Returns 
         -------
         bool 
-        True if car encounters collision. 
+        True if reaches goal state.
         '''
-        return super()._get_done()
-    
-    def _apply_action(self, action): 
-        '''
-        Applies a continuous action to car. Can be overridden by 
-        other inheriting environments to apply specific action. 
-
-        Parameters 
-        ----------
-        action : np.ndarray
-            Action should be 1D array of size 3 with dtype np.float32.
-            First index decides throttle, [0.0, 1.0]. 
-            Second index decides break, [0.0, 1.0]. 
-            Third index decides central steering angle, [-0.6, 0.6].
-        '''
-        super()._apply_action(action)
+        return self.done
 
     def _get_observation(self): 
         ''' 
-        Retrieves observation of car. Can be overridden by other 
-        inheriting environments to retrieve specific observation. 
+        Retrieves observation of car with no lidar. 
 
         Returns
         -------
         np.ndarray
-        Environment observation, must abide to observation space 
-        dimensions. 
+        Car position (2), orientation (2), velocity (2), target(2)
         '''
-        return super()._get_observation()
+        pos, ori = self.car.get_position_orientation()
+        vel = self.car.get_velocity()
+        return np.concatenate((pos, ori, vel, self.target))
 
     def _get_reward(self, obs):
         ''' 
@@ -110,18 +74,13 @@ class Driving0(DrivingEnv):
         Returns
         -------
         float
-        Environment reward, -dubin's distance - (summation of lidar matrix
-         corresponding to obstacles around car)
+        Euclidean distance between car and target. 
         '''
-        pos, ori, angle = self.car.get_position_orientation(True)
-        currPos = (pos[0], pos[1], angle)
-        targetPos = self.target # (x,y,theta) of target
-        if pos == targetPos: # Reached target
-          return 100
-        if self._get_done(): 
-            return -100 
-        # Dist
-        distance = dubins.shortest_path(currPos, targetPos, 1).path_length() 
-        obstacle = obs[7:].sum() # Summation of lidar matrix:obstacles around car
-        print(round(distance, 2), " ", round(obstacle, 2))
-        return (-1)*(distance + obstacle)
+        currPos, _, angle = self.car.get_position_orientation(True)
+        targetPos = self.target 
+        diff = abs(currPos - targetPos).sum()
+        if diff < 0.05: 
+            self.done = True
+            return 100
+        distance = np.linalg.norm(currPos - targetPos) 
+        return -distance

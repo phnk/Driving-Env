@@ -114,11 +114,12 @@ class DrivingEnv(gym.Env):
         # Retrieve observation
         observation = self._get_observation()
         
-        # Retrieve done status
-        done = self._get_done()
-        
         # Compute reward 
         reward = self._get_reward(observation)
+
+        # Retrieve done status
+        done = self._get_done()
+
 
         # Return observation, reward, done, {} 
         return observation, reward, done, dict()

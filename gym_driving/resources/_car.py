@@ -128,11 +128,9 @@ class Car:
 
         Returns 
         -------
-        To be decided. 
-
-        Current: 
-        position(2), orientation(2), velocity(2), wheel angle 
-        [-inf, inf], [-1, 1], [-5, 5], [-.7, .7]
+        position(2), orientation(2), velocity(2), wheel angle(1), 
+            lidar(self.num_seg)
+        Range: [-inf, inf], [-1, 1], [-5, 5], [-.7, .7], [0, 1]
         '''
         pos, ori, angle = self.get_position_orientation(True)
         lidar = self.get_lidar(angle)
