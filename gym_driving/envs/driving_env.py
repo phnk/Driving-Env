@@ -1,5 +1,5 @@
 ''' 
-Contains DrivingEnv class for OpenAI gym driving-v0 environment. 
+Contains base DrivingEnv class for OpenAI gym Driving-v0 environment.
 '''
 
 # OpenAI gym library imports 
@@ -11,7 +11,6 @@ import pybullet as p
 import pybullet_data 
 import numpy as np
 import matplotlib.pyplot as plt
-import dubins		# used in reward function
 # Local resources
 from gym_driving.resources import getResourcePath
 import gym_driving.resources._helper_functions as helper
@@ -23,7 +22,7 @@ class DrivingEnv(gym.Env):
     '''
     Base class for environments. 
 
-    Rewards to be determined - none for now. 
+    Rewards to be determined by child classes.
 
     action_space : spaces.Box
         np.ndarray of size 3. [0, 1], [0, 1], [-.6, .6] range. First
@@ -61,11 +60,17 @@ class DrivingEnv(gym.Env):
         car_high = np.array([float('inf'), float('inf'), 1, 1, 5, 5, .7])
         lidar_low = np.array([0.0 for i in range(self.lidar_seg)])
         lidar_high = np.array([1.0 for i in range(self.lidar_seg)])
-        self.observation_space = spaces.Box(
-            low=np.concatenate((car_low, lidar_low)),
-            high=np.concatenate((car_high, lidar_high)),
-            dtype=np.float32)
 
+        low = np.concatenate((car_low, lidar_low))
+        high = np.concatenate((car_high, lidar_high))
+        if additional_observation is not None: 
+            low = np.concatenate((low, additional_observation[0]))
+            high = np.concatenate((high, additional_observation[1]))
+
+
+        self.observation_space = spaces.Box(low=low, high=high, 
+            dtype=np.float32)
+            
         self.reward_range = None
         
         # Connect client 
@@ -132,14 +137,6 @@ class DrivingEnv(gym.Env):
         self.plane = p.loadURDF(getResourcePath('plane/plane.urdf'), 
             physicsClientId=self.client)
         self.car = car.Car(self.lidar_seg, client=self.client)
-
-
-        self.cube1 = cube.Cube([2.5, 0, 0], 4, self.client)
-        # Generate new target every time
-        self.target = (self.random.randint(-15,15), self.random.randint(-15,15),
-                       self.random.uniform(-3.14, 3.14)) 
-        # Marker for target
-        self.marker = cube.Cube(self.target, 4, self.client) 
 
     def render(self, mode='human'):
         '''
@@ -247,20 +244,12 @@ class DrivingEnv(gym.Env):
 
     def _get_reward(self, obs):
         ''' 
-        Retrieves reward of car.
+        Retrieves reward of car. None by default, must be overridden by
+        inheriting classes to specify environment rewards. 
 
         Returns
         -------
-        float
-        Environment reward, -dubin's distance - (summation of lidar matrix
-         corresponding to obstacles around car)
-        '''
-        pos, ori, angle = self.car.get_position_orientation(True)
-        currPos = (pos[0], pos[1], angle)
-        targetPos = self.target # (x,y,theta) of target
-        if pos == targetPos: # Reached target
-          return 100
-        # Dist
-        distance = dubins.shortest_path(currPos, targetPos, 1).path_length() 
-        obstacle = obs[4].sum() # Summation of lidar matrix:obstacles around car
-        return (-1)*(distance + obstacle)
+        int
+            Amount of reward at time step.
+         '''
+        raise NotImplementedError('Reward function not overridden.')
