@@ -10,6 +10,7 @@ import numpy as np
 # Local resources
 from gym_driving.envs.driving_env import DrivingEnv
 import gym_driving.resources._car as car
+from gym_driving.resources._cube import Cube
 
 
 class Driving0(DrivingEnv):
@@ -42,6 +43,8 @@ class Driving0(DrivingEnv):
         # Generate new target every time
         self.target = np.array(
             (self.random.randint(-15,15), self.random.randint(-15,15)))
+        Cube(np.concatenate((self.target, [0])), client=self.client)
+        return self._get_observation()
 
     def _get_done(self): 
         ''' 
@@ -76,11 +79,14 @@ class Driving0(DrivingEnv):
         float
         Euclidean distance between car and target. 
         '''
-        currPos, _, angle = self.car.get_position_orientation(True)
-        targetPos = self.target 
-        diff = abs(currPos - targetPos).sum()
-        if diff < 0.05: 
+        currPos, _= self.car.get_position_orientation()
+
+        if abs(currPos[0]) > 14.8 or abs(currPos[1]) > 14.8: 
             self.done = True
-            return 100
-        distance = np.linalg.norm(currPos - targetPos) 
+            return -1000
+
+        distance = np.linalg.norm(currPos - self.target) 
+        if distance < 0.5: 
+            self.done = True
+            return 1000
         return -distance

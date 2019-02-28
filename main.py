@@ -7,20 +7,24 @@ import gym_driving
 import numpy as np
 
 def main(): 
-    # Continuous environment 
+    # Continuous environment demonstration 
     env = gym.make('Driving-v0')
     env.seed(1)
     env.reset() 
 
-    for _ in range(100): 
+    for t in range(600): 
         ob, rew, done, info = env.step(np.array([1, 0, 0]))
+        if t % 20 == 0: 
+            print(t, ": ", rew)
+            env.render()
+        if done: 
+            break
+    for t in range(500): 
+        ob, rew, done, info = env.step(np.array([0.5, 0, 0.15]))
+        print(t, ": ", rew)
         env.render()
-    for _ in range(100): 
-        ob, rew, done, info = env.step(np.array([0.5, 0, 0.6]))
-        env.render()
-    for _ in range(100): 
-        ob, rew, done, info = env.step(np.array([1, 0, -0.3]))
-        env.render()
+        if done: 
+            break
     env.close()
 
 

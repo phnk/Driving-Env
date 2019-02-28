@@ -138,6 +138,7 @@ class DrivingEnv(gym.Env):
         self.plane = p.loadURDF(getResourcePath('plane/plane.urdf'), 
             physicsClientId=self.client)
         self.car = car.Car(self.lidar_seg, client=self.client)
+        return self._get_observation()
 
     def render(self, mode='human'):
         '''
