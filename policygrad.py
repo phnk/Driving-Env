@@ -14,20 +14,20 @@ class Policy(nn.Module):
     def __init__(self, in_shape, out_shape): 
         super().__init__()
 
-        self.hidden_act = nn.ReLU()
-        self.std = nn.Parameter(torch.ones(out_shape))
+        self.hidden_act = nn.Tanh()
 
         self.layers = nn.ModuleList([
-            nn.Linear(in_shape, 60),
+            nn.Linear(in_shape, 128),
             self.hidden_act, 
-            nn.Linear(60, 24), 
+            nn.Linear(128, 128), 
             self.hidden_act, 
-            nn.Linear(24, out_shape)
+            nn.Linear(128, out_shape)
         ])
 
         for layer in self.layers: 
             if isinstance(layer, nn.Linear):
-                nn.init.xavier_normal_(layer.weight)
+                nn.init.xavier_normal_(layer.weight,
+                    gain=nn.init.calculate_gain('tanh'))
 
     def forward(self, state): 
         for layer in self.layers: 
@@ -35,26 +35,77 @@ class Policy(nn.Module):
         return state
 
 
+class SGDOptim: 
+    '''
+    Wrapper for SGD optimizer.
+    '''
+    def __init__(self, model, optim, scheduler=None, clip=None): 
+        self.model = model
+        self.optim = optim
+        self.scheduler = scheduler
+        self.clip = clip
+
+    def step(self, val_loss=None): 
+        if self.scheduler is not None: 
+            self.scheduler.step(val_loss)
+        if self.clip is not None: 
+            torch.nn.utils.clip_grad_norm_(self.model.parameters(),
+                self.clip)
+        self.optim.step()
+    
+    def state_dict(self): 
+        return self.optim.state_dict(), self.scheduler.state_dict()
+
+    def load_state_dict(self, state): 
+        self.optim.load_state_dict(state[0])
+        self.scheduler.load_state_dict(state[1])
+
+    def add_param_group(self, *args): 
+        optim.add_param_group(*args)
+
+    def zero_grad(self): 
+        self.optim.zero_grad()
+
+
 def load_checkpoint(checkpoint_path, config): 
-    model = Policy(config['ob_dim'], config['action_dim'])
-    optim = torch.optim.Adam(model.parameters(), lr=config['alpha'])
+    '''
+    Loads a checkpoint if it exists. Otherwise, initializes.
+    '''
+    # Policy
+    policy = Policy(config['ob_dim'], config['action_dim'])
+    optim = torch.optim.Adam(policy.parameters(), config['policy_lr'])
+    # Std 
+    std = torch.ones(config['action_dim'], requires_grad=True)
+    # Recording 
     ep_reward = []
     ep_loss = []
+    
+    # Try to load from checkpoint
     try: 
         checkpoint = torch.load(checkpoint_path)
-        model.load_state_dict(checkpoint['model'])
+        policy.load_state_dict(checkpoint['policy'])
+        std = checkpoint['std']
+        optim.add_param_group({'params': std, 'lr': config['std_lr']})
         optim.load_state_dict(checkpoint['optim'])
         ep_reward = checkpoint['ep_reward']
         ep_loss = checkpoint['ep_loss']
+        print(f'Resuming training from Epoch {len(ep_loss)}')
     except FileNotFoundError:
+        optim.add_param_group({'params': std, 'lr': config['std_lr']})
         print('NOTE: Training from scratch.')
-    return model, optim, ep_reward, ep_loss
+            
+    return (policy, optim, std, ep_reward, ep_loss)
 
 
-def save_checkpoint(checkpoint_path, model, optim, ep_reward, ep_loss):
+def save_checkpoint(checkpoint_path, policy, optim, std, ep_reward, 
+    ep_loss):
+    '''
+    Saves checkpoint.
+    '''
     torch.save({
-        'model': model.state_dict(), 
+        'policy': policy.state_dict(), 
         'optim': optim.state_dict(), 
+        'std': std, 
         'ep_reward': ep_reward, 
         'ep_loss': ep_loss
     }, checkpoint_path)
@@ -67,23 +118,27 @@ def main():
 
     # Hyperparameters
     config = { 
-    'action_dim': 1,
-    'ob_dim': 2,
-    'max_trajectory': 1000,
-    'batch_size': 48,
+    'action_dim': 4,
+    'ob_dim': 24,
+    'max_trajectory': 800,
+    'batch_size': 8,
     'discount': 0.90,
-    'alpha': 0.01,
-    'epochs': 15
+    'policy_lr': 1e-3,
+    'std_lr': 1e-3,
+    'epochs': 40,
     }
 
-    checkpoint_path = 'checkpoint.tar'
-    model, optim, ep_reward, ep_loss = load_checkpoint(checkpoint_path, config)
+    # Load checkpoint
+    checkp_path = 'checkpoint.tar'
+    policy, optim, std, ep_reward, ep_loss = \
+        load_checkpoint(checkp_path, config)
 
     # Train over epochs (batches of episodes)
-    env = gym.make('MountainCarContinuous-v0')
-    for _ in range(config['epochs']):
+    env = gym.make('BipedalWalker-v2')
+    for ep in range(1, config['epochs'] + 1):
         ep_reward.append(0)
         ep_loss.append(0)
+        won = 0
         # Run episodes for one batch
         for episode in range(config['batch_size']): 
             log_prob = []
@@ -91,11 +146,10 @@ def main():
             ob = torch.from_numpy(env.reset()).float()
             # Run single episode
             for step in range(config['max_trajectory']):
-                dist = norm_dist(model(ob), torch.exp(model.std))
+                dist = norm_dist(policy(ob), torch.exp(std))
                 action = dist.sample()
                 log_prob.append(dist.log_prob(action))
-
-                ob, reward, done, _ = env.step(action)
+                ob, reward, done, _ = env.step(action.numpy())
                 ob = torch.from_numpy(ob).float()
                 rewards.append(reward)
                 if done: 
@@ -109,32 +163,36 @@ def main():
         # Backward        
         optim.zero_grad() 
         ep_loss[-1] /= config['batch_size']
-        ep_loss[-1].backward()
-        optim.step()
-        # Print reward and loss over the episodes of the batch
+        ep_loss[-1].sum().backward()
+        # Recording
         ep_reward[-1] /= config['batch_size']
-        ep_loss[-1] = -ep_loss[-1].item()
-        print(f'Epoch {len(ep_loss)}\tReward:\t{round(ep_reward[-1], 2)}\t'
-            f'Loss:\t{round(ep_loss[-1], 2)}')
+        ep_loss[-1] = -ep_loss[-1].sum().item()
+        # Step 
+        optim.step()
 
-    # Save checkpoint 
-    save_checkpoint(checkpoint_path, model, optim, ep_reward, ep_loss)  
-    # Print info 
-    ep = [i * 48 for i in range(len(ep_loss))]
-    plt.plot(ep, ep_reward)
-    plt.title('Reward per episode.')
+        # Save checkpoint 
+        if ep % 10 == 0: 
+            print(f'Epoch {len(ep_loss)}\tReward:\t{round(ep_reward[-1], 2)}\t'
+                f'Loss:\t{round(ep_loss[-1], 2)}')
+            save_checkpoint(checkp_path, policy, optim, std,  ep_reward, 
+                ep_loss)
+
+    # Graph info 
+    ep = [i * config['batch_size'] for i in range(len(ep_loss))]
+    plt.plot(ep, ep_loss)
+    plt.title('Loss per episode.')
     plt.show()
 
-    model.eval()
+    policy.eval()
     # Render 
     ob = torch.from_numpy(env.reset()).float()
     for _ in range(config['max_trajectory']): 
         with torch.no_grad():
             env.render()
             dist = torch.distributions.normal.Normal(
-                        model(ob), torch.exp(model.std))
+                        policy(ob), torch.exp(std))
             action = dist.sample()
-            ob, reward, done, _ = env.step(action)
+            ob, reward, done, _ = env.step(action.numpy())
             ob = torch.from_numpy(ob).float()
             if done: 
                 break

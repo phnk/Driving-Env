@@ -26,7 +26,6 @@ class Driving0(DrivingEnv):
         super().__init__()
 
         self.done = False
-
         # Reset observation space
         low = np.array([-float('inf'), -float('inf'), -1, -1, -5, -5, -15, -15])
         high = np.array([float('inf'), float('inf'), 1, 1, 5, 5, 15, 15])
@@ -43,7 +42,9 @@ class Driving0(DrivingEnv):
         # Generate new target every time
         self.target = np.array(
             (self.random.randint(-15,15), self.random.randint(-15,15)))
-        Cube(np.concatenate((self.target, [0])), client=self.client)
+        Cube(list(self.target) +  [0], client=self.client)
+        self.done = False
+
         return self._get_observation()
 
     def _get_done(self): 
