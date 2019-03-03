@@ -40,8 +40,10 @@ class Driving0(DrivingEnv):
         super().reset()
 
         # Generate new target every time
-        self.target = np.array(
-            (self.random.randint(-15,15), self.random.randint(-15,15)))
+        # self.target = np.array(
+        #     (self.random.randint(-15,15), self.random.randint(-15,15)))
+        self.target = np.array((8, 0))
+
         Cube(list(self.target) +  [0], client=self.client)
         self.done = False
 

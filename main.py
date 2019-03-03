@@ -14,7 +14,8 @@ def main():
 
     for t in range(600): 
         ob, rew, done, info = env.step(np.array([1, 0, 0]))
-        if t % 20 == 0: 
+        if t % 5 == 0: 
+            print(t)
             print(t, ": ", rew)
             env.render()
         if done: 
