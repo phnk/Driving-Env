@@ -12,10 +12,9 @@ def main():
     env.seed(1)
     env.reset() 
 
-    for t in range(600): 
+    for t in range(100): 
         ob, rew, done, info = env.step(np.array([1, 0, 0]))
-        if t % 5 == 0: 
-            print(t)
+        if t % 2 == 0: 
             print(t, ": ", rew)
             env.render()
         if done: 

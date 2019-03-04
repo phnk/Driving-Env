@@ -42,7 +42,7 @@ class Driving0(DrivingEnv):
         # Generate new target every time
         # self.target = np.array(
         #     (self.random.randint(-15,15), self.random.randint(-15,15)))
-        self.target = np.array((8, 0))
+        self.target = np.array((2, 0))
 
         Cube(list(self.target) +  [0], client=self.client)
         self.done = False
@@ -86,10 +86,10 @@ class Driving0(DrivingEnv):
 
         if abs(currPos[0]) > 14.8 or abs(currPos[1]) > 14.8: 
             self.done = True
-            return -1000
+            return -100
 
         distance = np.linalg.norm(currPos - self.target) 
         if distance < 0.5: 
             self.done = True
-            return 1000
-        return -distance
+            return 100
+        return -((distance / 10)**2)

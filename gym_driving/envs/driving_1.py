@@ -14,7 +14,7 @@ import gym_driving.resources._car as car
 import gym_driving.resources._cube as cube
 
 # Add a number for the environment 
-class Driving<add_number_here>(DrivingEnv):
+class Driving1(DrivingEnv):
     '''
     EDIT AFTER CREATING ENVIRONMENT. 
     Optionally implement your own 
@@ -25,19 +25,17 @@ class Driving<add_number_here>(DrivingEnv):
     Implement your own 
         get_reward
 
-
     action_space : spaces.Box
         np.ndarray of size 3. [0, 1], [0, 1], [-.6, .6] range. First
         feature is throttle, second is break, third is central steering
         angle. 
     '''
-    metadata = {'render.modes': ['human']}
-    
     def __init__(self, additional_observation=None):
         super().__init__()
 
         # Set this after you've decided your reward 
         self.reward_range = None
+
                                            
     def reset(self):
         ''' 

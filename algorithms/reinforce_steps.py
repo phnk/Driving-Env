@@ -1,5 +1,8 @@
 '''
 Policy gradient with REINFORCE over steps.
+
+Z scores rewards over potentially multiple episodes, averages gradient
+over batches of steps.
 '''
 
 import torch 
@@ -55,38 +58,6 @@ def classify_discrete(logits):
     action = torch.multinomial(probs, 1).cpu().item()
     log_prob = probs[action].log()
     return action, log_prob
-
-
-class SGDOptim: 
-    '''
-    Wrapper for SGD optimizer.
-    '''
-    def __init__(self, model, optim, scheduler=None, clip=None): 
-        self.model = model
-        self.optim = optim
-        self.scheduler = scheduler
-        self.clip = clip
-
-    def step(self, val_loss=None): 
-        if self.scheduler is not None: 
-            self.scheduler.step(val_loss)
-        if self.clip is not None: 
-            torch.nn.utils.clip_grad_norm_(self.model.parameters(),
-                self.clip)
-        self.optim.step()
-    
-    def state_dict(self): 
-        return self.optim.state_dict(), self.scheduler.state_dict()
-
-    def load_state_dict(self, state): 
-        self.optim.load_state_dict(state[0])
-        self.scheduler.load_state_dict(state[1])
-
-    def add_param_group(self, *args): 
-        optim.add_param_group(*args)
-
-    def zero_grad(self): 
-        self.optim.zero_grad()
 
 
 def load_checkpoint(checkpoint_path, config): 
@@ -145,26 +116,38 @@ def z_score_rewards(rewards):
     return rewards
 
 
+def graph_reward(ep_reward):
+    '''
+    Graph info.
+    '''
+    ep = [i for i in range(len(ep_reward))]
+    plt.plot(ep, ep_reward)
+    ran = (max(ep_reward) - min(ep_reward)) * 0.1
+    plt.ylim((min(ep_reward) - ran, max(ep_reward) + ran))
+    plt.title('Reward per episode.')
+    plt.show()
+
+
 def main(): 
     '''
-    Training procedure.
+    Calls training procedure.
     '''
 
     # Hyperparameters
     config = { 
     'action_dim': None,
     'ob_dim': None,
-    'policy_hidden_units': [128, 128],
-    'max_trajectory': 700,
-    'batch_size': 2800,
+    'policy_hidden_units': [64, 64],
+    'max_trajectory': 800,
+    'batch_size': 2000,
     'max_episodes': 5, 
     'discount': 0.99,
-    'policy_lr': 1e-3,
-    'std_lr': 5e-3,
+    'policy_lr': 1e-2,
+    'std_lr': 1e-3,
     'epochs': 100,
     }
 
-    env = gym.make('Driving-v0')
+    env = gym.make('MountainCarContinuous-v0')
     config['action_dim'] = env.action_space.low.size
     config['ob_dim'] = env.observation_space.low.size
 
@@ -235,24 +218,13 @@ def main():
         # Recording, store raw reward over episodes
         ep_reward[-1] /= (episodes - 1)
 
-        if sum(ep_reward[-10:]) / 10 > 100: 
-            print(f'Epoch {len(ep_reward)}\tReward:\t{round(ep_reward[-1], 2)}')
-            print('Saving final.')
-            save_checkpoint(checkp_path, policy, optim, std,  ep_reward, config)
-            break
-
         # Save checkpoint 
         if ep % 5 == 0: 
             print(f'Epoch {len(ep_reward)}\tReward:\t{round(ep_reward[-1], 2)}')
             save_checkpoint(checkp_path, policy, optim, std,  ep_reward, config)
 
-    '''
     # Graph info 
-    ep = [i for i in range(len(ep_reward))]
-    plt.plot(ep, ep_reward)
-    plt.title('Reward per episode.')
-    plt.show()
-    '''
+    graph_reward(ep_reward)
 
     policy.eval()
     # Render 

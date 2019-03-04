@@ -8,3 +8,8 @@ register(
     entry_point='gym_driving.envs:Driving0',
     )
 
+register(
+    id='Driving-v1', 
+    entry_point='gym_driving.envs:Driving1',
+    )
+
