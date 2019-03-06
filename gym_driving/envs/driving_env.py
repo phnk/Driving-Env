@@ -82,7 +82,7 @@ class DrivingEnv(gym.Env):
 
         # Set image for rendering
         self.imgsize = 100
-        self.img = plt.imshow(np.zeros((self.imgsize, self.imgsize, 4)))
+        self.img = None
 
         # Target Position (x,y,theta)
         self.target = (10, -5, 0)
@@ -148,6 +148,9 @@ class DrivingEnv(gym.Env):
         mode : str, optional
             Render mode according to metadata['render.modes']. 
         '''
+        if self.img is None:
+            self.img = plt.imshow(np.zeros((self.imgsize, self.imgsize, 4)))
+
         # Base information
         car_id, client_id = self.car.get_ids()
         proj_matrix = p.computeProjectionMatrixFOV(fov=60, aspect=1, 
