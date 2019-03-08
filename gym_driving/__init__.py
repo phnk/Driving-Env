@@ -13,3 +13,7 @@ register(
     entry_point='gym_driving.envs:Driving1',
     )
 
+register(
+    id='Driving-v3', 
+    entry_point='gym_driving.envs:Driving3',
+    )
