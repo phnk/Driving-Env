@@ -14,7 +14,7 @@ import gym_driving.resources._car as car
 import gym_driving.resources._cube as cube
 
 # Add a number for the environment 
-class Driving2(DrivingEnv):
+class Driving3(DrivingEnv):
     '''
     EDIT AFTER CREATING ENVIRONMENT. 
     Optionally implement your own 
@@ -57,8 +57,8 @@ class Driving2(DrivingEnv):
         leftSide = 2
         currentPosition = 2
         for i in range(0,15):
-            cube.Cube([rightSide, currentPosition+=2, 0])
-            cube.Cube([leftSide, currentPosition+=2, 0])
+            cube.Cube([rightSide, currentPosition + 2 * i, 0])
+            cube.Cube([leftSide, currentPosition+ 2 * i, 0])
 
     def _get_done(self): 
         ''' 

@@ -31,6 +31,7 @@ class Driving0(DrivingEnv):
         high = np.array([float('inf'), float('inf'), 1, 1, 5, 5, 15, 15])
         self.observation_space = gym.spaces.Box(low=low, high=high, 
             dtype=np.float32)
+        self.prev_dist = None
                                            
     def reset(self):
         ''' 
@@ -40,12 +41,15 @@ class Driving0(DrivingEnv):
         super().reset()
 
         # Generate new target every time
-        # self.target = np.array(
-        #     (self.random.randint(-15,15), self.random.randint(-15,15)))
-        self.target = np.array((2, 0))
+        #self.target = np.array(
+        #    (self.random.choice([-1, 1]) * self.random.randint(5, 13), 
+        #     self.random.choice([-1, 1]) * self.random.randint(5,13))
+        self.target = np.array([-7, 0])
 
         Cube(list(self.target) +  [0], client=self.client)
         self.done = False
+        self.prev_dist = np.linalg.norm(np.array(
+            self.car.get_position_orientation()[0]) - self.target)
 
         return self._get_observation()
 
@@ -89,7 +93,12 @@ class Driving0(DrivingEnv):
             return -100
 
         distance = np.linalg.norm(currPos - self.target) 
+
         if distance < 0.5: 
             self.done = True
             return 100
-        return -((distance / 10)**2)
+
+        reward = (self.prev_dist - distance) 
+        self.prev_dist = distance
+
+        return reward * 10 if reward > 0 else reward
