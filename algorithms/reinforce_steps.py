@@ -76,10 +76,10 @@ def main():
     'max_steps': 500,
     'batch_size': 2000,
     'max_episodes': 4, 
-    'discount': 0.98,
+    'discount': 0.99,
     'policy_lr': 1e-3,
     'std_lr': 1e-2,
-    'epochs': 100,
+    'epochs': 0,
     }
 
     env = gym.make('Driving-v0')

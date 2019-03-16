@@ -16,7 +16,7 @@ class Network(nn.Module):
     For linear layer, layer_units just contains the output units.
 
     '''
-    def __init__(self, in_shape, layer_units):
+    def __init__(self, in_shape, layer_units, critic=False):
         super().__init__()
         self.hidden_act = nn.Tanh()
 
@@ -31,8 +31,13 @@ class Network(nn.Module):
 
         for layer in self.layers: 
             if isinstance(layer, nn.Linear):
-                nn.init.xavier_normal_(layer.weight,
-                    gain=nn.init.calculate_gain('tanh'))
+                if critic: 
+                    nn.init.normal_(layer.weight, std=1e-2)
+                    nn.init.normal_(layer.bias, std=1e-3)
+                else: 
+                    nn.init.xavier_normal_(layer.weight,
+                        gain=nn.init.calculate_gain('tanh'))
+        
 
     def forward(self, state): 
         for layer in self.layers: 
@@ -86,6 +91,19 @@ def z_score_rewards(rewards):
     return rewards
 
 
+def shuffle_together(seq1, seq2):
+    state = np.random.get_state()
+    np.random.shuffle(seq1)
+    np.random.set_state(state)
+    np.random.shuffle(seq2)
+
+
+def batch(iterable, batch_size): 
+    l = len(iterable)
+    for b_ind in range(0, l, batch_size):
+        yield iterable[b_ind : b_ind + batch_size]
+
+
 class SGDOptim: 
     '''
     Wrapper for SGD optimizer with optional clipping and lr scheduler.
@@ -116,5 +134,3 @@ class SGDOptim:
 
     def zero_grad(self): 
         self.optim.zero_grad()
-
-

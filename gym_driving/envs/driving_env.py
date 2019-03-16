@@ -49,7 +49,7 @@ class DrivingEnv(gym.Env):
     
     def __init__(self, additional_observation=None):
         # Number of lidar segments for car 
-        self.lidar_seg = 20
+        self.lidar_seg = 10
 
         # Set up action space
         self.action_space = spaces.Box(np.array([0, 0, -.6]), 

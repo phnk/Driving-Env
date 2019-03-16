@@ -1,8 +1,5 @@
 '''
-Policy gradient with REINFORCE over steps.
-
-Z scores rewards over potentially multiple episodes, averages gradient
-over batches of steps.
+Attempt at TD(0) critic.
 '''
 
 import torch 

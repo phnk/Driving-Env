@@ -40,13 +40,11 @@ class Driving0(DrivingEnv):
         # Default initialization of car, plane, and gravity 
         super().reset()
 
-        # Generate new target every time
-        #self.target = np.array(
-        #    (self.random.choice([-1, 1]) * self.random.randint(5, 13), 
-        #     self.random.choice([-1, 1]) * self.random.randint(5,13))
-        self.target = np.array([-7, 0])
+        # Generate new target in front of car each episode
+        self.target = np.array((self.random.randint(5, 13), 
+             self.random.choice([-1, 1]) * self.random.randint(0,13)))
+        Cube(list(self.target) +  [0], 3, client=self.client)
 
-        Cube(list(self.target) +  [0], client=self.client)
         self.done = False
         self.prev_dist = np.linalg.norm(np.array(
             self.car.get_position_orientation()[0]) - self.target)
@@ -90,7 +88,7 @@ class Driving0(DrivingEnv):
 
         if abs(currPos[0]) > 14.8 or abs(currPos[1]) > 14.8: 
             self.done = True
-            return -100
+            return 0
 
         distance = np.linalg.norm(currPos - self.target) 
 

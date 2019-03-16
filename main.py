@@ -8,20 +8,22 @@ import numpy as np
 
 def main(): 
     # Continuous environment demonstration 
-    env = gym.make('Driving-v0')
+    env = gym.make('Driving-v1')
     env.seed(1)
     env.reset() 
 
     for t in range(100): 
         ob, rew, done, info = env.step(np.array([1, 0, 0]))
-        if t % 2 == 0: 
+        if t % 5 == 0: 
             print(t, ": ", rew)
             env.render()
         if done: 
             break
     for t in range(500): 
-        ob, rew, done, info = env.step(np.array([0.5, 0, 0.15]))
-        print(t, ": ", rew)
+        ob, rew, done, info = env.step(np.array([0.5, 0, -0.15]))
+        if t % 5 == 0: 
+            print(t, ": ", rew)
+            env.render()
         env.render()
         if done: 
             break
