@@ -1,9 +1,10 @@
 '''
-Actor critic with state-value function critic. 
+Attempted A2C, Advantage Actor Critic. 
 
-Critic used to calculate MC error (Gt - C(St)), policy updated towards
-MC error (MC evaluation). Critic updated in batches from completed episodes. 
-Several critic updates for each policy update. 
+Advantage Q(s, a) - V(s) calculated using TD Error, (R + Gamma * V(s') - V(s)).
+State value function approximator trained with n step TD.
+
+IN PROGRESS. 
 '''
 
 import torch 
@@ -12,8 +13,6 @@ import gym_driving
 import numpy as np
 import torch.nn as nn
 from util import *
-
-import time
 
 
 def load_checkpoint(checkpoint_path, config): 
@@ -97,15 +96,16 @@ def main():
     'policy_lr': 1e-3,
     'critic_lr': 5e-3,
     'std_lr': 1e-2,
-    'max_steps': 800,
-    'batch_size': 2400,
+    'max_steps': 500,
+    'batch_size': 2000,
     'max_episodes': 4, 
     'critic_max_batch': 128,
-    'discount': 0.98,
-    'epochs': 0
+    'n_step_return': 20
+    'discount': 0.99,
+    'epochs': 100
     }
 
-    env = gym.make('Driving-v1')
+    env = gym.make('Driving-v0')
     config['action_dim'] = env.action_space.low.size
     config['ob_dim'] = env.observation_space.low.size
     
@@ -128,12 +128,13 @@ def main():
     for ep in range(1, config['epochs'] + 1):
         # Recording for batch
         log_probs = []
-        rewards = []
         observations = []
+        td_targets = []
         critic_pred = []
         # Recording for episodes within a batch
         episode_start_step = 0
         episodes = 0
+        rewards = []
 
         # Run fixed number of steps with multiple episodes
         step = 0
@@ -156,9 +157,8 @@ def main():
             if done or (step - episode_start_step >= config['max_steps']):
                 episodes += 1
                 episode_reward.append(sum(rewards[episode_start_step:]))
-                # Find discounted rewards over episode
-                for ind in range(len(rewards) - 2, episode_start_step - 1, -1):
-                    rewards[ind] += config['discount'] * rewards[ind + 1]
+
+                # Calculate td targets for each critic pred
 
                 # Exit if can't run another episode in batch size
                 if step + config['max_steps'] > config['batch_size']:
@@ -169,6 +169,8 @@ def main():
                 # Continue otherwise
                 episode_start_step = step 
                 ob = torch.from_numpy(env.reset()).float().to(device)
+                rewards = []
+
         # Compute critic loss by randomized batch sampling 
         critic_targ = rewards.copy()
         shuffle_together(critic_targ, critic_pred)
