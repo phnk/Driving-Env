@@ -2,6 +2,7 @@
 Contains basic cube class as URDF wrapper. 
 '''
 import pybullet as p 
+import numpy as np
 from gym_driving.resources import getResourcePath
 
 class Cube: 
@@ -21,14 +22,21 @@ class Cube:
     # Supported sizes
     sizes = {1, 2, 3, 4, 5}
 
-    def __init__(self, position=[0, 0, 0], size=1, client=0):
+    def __init__(self, position=[0, 0, 0], size=1, marker=False, client=0):
         assert size in Cube.sizes, f'Unsupported size {size} for Cube.'
 
         self.client = client
-        self.cube = p.loadURDF(
-            fileName=getResourcePath(f'cube/cube{size}.urdf'), 
-            basePosition=position, 
-            physicsClientId=self.client)
+        self.position = np.array(position[0:2])
+        if not marker: 
+            self.cube = p.loadURDF(
+                fileName=getResourcePath(f'cube/cube{size}.urdf'), 
+                basePosition=position, 
+                physicsClientId=self.client)
+        else: 
+            self.cube = p.loadURDF(
+                fileName=getResourcePath('cube/marker.urdf'), 
+                basePosition=position, 
+                physicsClientId=self.client)
 
     def get_ids(self): 
         ''' 
@@ -41,3 +49,5 @@ class Cube:
         '''
         return self.cube, self.client
    
+    def get_position(self): 
+        return self.position

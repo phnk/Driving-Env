@@ -19,8 +19,8 @@ def main():
     c = car.Car(10)
     a = p.loadURDF(getResourcePath('plane/plane.urdf'))
 
-    cube.Cube([3, 0, 0], size=5)
-    cube.Cube([-1, 3, 0], size=5)
+    cube.Cube([3, 0, 0], size=5, marker=True)
+    cube.Cube([-1, 3, 0], size=5, marker=True)
     count = 0
     while True: 
         count += 1
@@ -33,13 +33,8 @@ def main():
             quit()
         c.apply_action([throttle, breaking, steer])
         p.stepSimulation()
-        col = c.get_collision()
-        if col: 
-            print('collision')
-        print(c.get_position_orientation(True)[2])
-        #if count % 100 == 0: 
-        #    c._debug_lidar()
-        #    print(c.get_lidar())
+        if count % 100 == 0: 
+            print(c.get_lidar())
         time.sleep(0.001) 
 
 if __name__ == '__main__': 

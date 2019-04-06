@@ -25,25 +25,29 @@ class Driving0(DrivingEnv):
     def __init__(self, additional_observation=None):
         super().__init__()
 
-        self.done = False
-        # Reset observation space
-        low = np.array([-float('inf'), -float('inf'), -1, -1, -5, -5, -15, -15])
-        high = np.array([float('inf'), float('inf'), 1, 1, 5, 5, 15, 15])
+        # Reset observation space as there is no lidar
+        low = np.array([-15, -15, -1, -1, -5, -5])
+        high = np.array([15, 15, 1, 1, 5, 5])
         self.observation_space = gym.spaces.Box(low=low, high=high, 
             dtype=np.float32)
+
         self.prev_dist = None
+        self.done = False
+        self.reward_range = (-1, 50)
                                            
     def reset(self):
         ''' 
         Initialization to start simulation. Loads all proper objects. 
         '''
-        # Default initialization of car, plane, and gravity 
-        super().reset()
-
         # Generate new target in front of car each episode
         self.target = np.array((self.random.randint(5, 13), 
              self.random.choice([-1, 1]) * self.random.randint(0,13)))
-        Cube(list(self.target) +  [0], 3, client=self.client)
+
+        # Default initialization of car, plane, and gravity 
+        super().reset()
+
+        # Visual display of target
+        Cube(list(self.target) +  [0], 2, marker=True, client=self.client)
 
         self.done = False
         self.prev_dist = np.linalg.norm(np.array(
@@ -69,11 +73,11 @@ class Driving0(DrivingEnv):
         Returns
         -------
         np.ndarray
-        Car position (2), orientation (2), velocity (2), target(2)
+        vector to target (2), orientation (2), velocity (2)
         '''
         pos, ori = self.car.get_position_orientation()
         vel = self.car.get_velocity()
-        return np.concatenate((pos, ori, vel, self.target))
+        return np.concatenate((self.target - pos, ori, vel))
 
     def _get_reward(self, obs):
         ''' 
@@ -92,9 +96,9 @@ class Driving0(DrivingEnv):
 
         distance = np.linalg.norm(currPos - self.target) 
 
-        if distance < 0.5: 
+        if distance < 0.8: 
             self.done = True
-            return 100
+            return 50
 
         reward = (self.prev_dist - distance) 
         self.prev_dist = distance

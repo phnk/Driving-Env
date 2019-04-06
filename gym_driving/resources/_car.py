@@ -46,7 +46,7 @@ class Car:
         self.joint_speed = 0
 
         # Max-min range of lidar
-        self.lidar_range = 15
+        self.lidar_range = 10
         self.min_lidar_range = 0.2
         # Number of segments within covered area
         self.num_seg = lidar_seg
@@ -200,6 +200,7 @@ class Car:
         pos, ang = p.getBasePositionAndOrientation(self.car, self.client)
         ang = p.getEulerFromQuaternion(ang)
         ori = np.array([math.cos(ang[2]), math.sin(ang[2])])
+        pos = np.array(pos)
         return (pos[:2], ori, ang[2]) if angle else (pos[:2], ori)
 
     def get_lidar(self, angle=None): 
@@ -239,7 +240,9 @@ class Car:
             self.car, 9, self.client)
         lidar_ob = np.zeros(self.num_seg)
         ray_per_zone = self.num_rays // self.num_seg
+        # How to rotate lidar based on cars position 
         offset = -int((angle / math.pi) * self.num_rays / 2)
+        # Gather ray data
         for zone in range(self.num_seg): 
             for ray in range(ray_per_zone):
                 index = ((zone * ray_per_zone + ray) + offset)
@@ -248,6 +251,7 @@ class Car:
                 if batch[index][0] != -1: 
                     score = 1 - batch[index][2] 
                     lidar_ob[zone] = max(lidar_ob[zone], score)
+
         return lidar_ob
 
     def _init_lidar(self): 

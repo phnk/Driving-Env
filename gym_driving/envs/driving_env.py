@@ -49,25 +49,18 @@ class DrivingEnv(gym.Env):
     
     def __init__(self, additional_observation=None):
         # Number of lidar segments for car 
-        self.lidar_seg = 10
+        self.lidar_seg = 30
 
         # Set up action space
         self.action_space = spaces.Box(np.array([0, 0, -.6]), 
             np.array([1, 1, .6]), dtype=np.float32)
 
-        # Set up observation space
-        car_low = np.array([-float('inf'), -float('inf'), -1, -1, -5, -5, -.7])
-        car_high = np.array([float('inf'), float('inf'), 1, 1, 5, 5, .7])
-        lidar_low = np.array([0.0 for i in range(self.lidar_seg)])
-        lidar_high = np.array([1.0 for i in range(self.lidar_seg)])
-
-        low = np.concatenate((car_low, lidar_low))
-        high = np.concatenate((car_high, lidar_high))
+        # Set up observation space with lidar 
+        low = np.array([0.0 for i in range(self.lidar_seg)])
+        high = np.array([1.0 for i in range(self.lidar_seg)])
         if additional_observation is not None: 
             low = np.concatenate((low, additional_observation[0]))
             high = np.concatenate((high, additional_observation[1]))
-
-
         self.observation_space = spaces.Box(low=low, high=high, 
             dtype=np.float32)
             
@@ -84,9 +77,6 @@ class DrivingEnv(gym.Env):
         self.imgsize = 100
         self.img = None
 
-        # Target Position (x,y,theta)
-        self.target = (10, -5, 0)
-                                           
     def step(self, action): 
         '''
         Applies an action and returns environment information.
@@ -177,6 +167,8 @@ class DrivingEnv(gym.Env):
         Performs environment cleanup. 
         '''
         p.disconnect(self.client)
+        if self.img is not None: 
+            plt.close()
 
     def seed(self, seed=None):
         '''
