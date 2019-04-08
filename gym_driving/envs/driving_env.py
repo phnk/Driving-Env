@@ -176,10 +176,6 @@ class DrivingEnv(gym.Env):
 
         If None, generates a random seed. Returns seed value.
 
-        Note: gym #1196 deletes spaces.prng. When updated, the
-        "Seed action space" line should be uncommented. Until this 
-        update is live, this line will cause an error if uncommented.
-
         Parameters
         ----------
         seed : int, optional 
@@ -193,7 +189,7 @@ class DrivingEnv(gym.Env):
         # Create new RandomState object, seed, using seed value
         self.random, seed = seeding.np_random(seed)
         # Seed action space random sample generator
-        # self.action_space.seed(seeding.create_seed(seed, max_bytes=4))
+        self.action_space.seed(seeding.create_seed(seed, max_bytes=4))
 
         # Return seed used  
         return seed
