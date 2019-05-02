@@ -40,8 +40,9 @@ class Driving0(DrivingEnv):
         Initialization to start simulation. Loads all proper objects. 
         '''
         # Generate new target in front of car each episode
-        self.target = np.array((self.random.randint(5, 13), 
-             self.random.choice([-1, 1]) * self.random.randint(0,13)))
+        self.target = np.array(
+            (self.random.choice([-1, 1]) * self.random.randint(5, 13), 
+             self.random.choice([-1, 1]) * self.random.randint(5,13)))
 
         # Default initialization of car, plane, and gravity 
         super().reset()
@@ -52,8 +53,13 @@ class Driving0(DrivingEnv):
         self.done = False
         self.prev_dist = np.linalg.norm(np.array(
             self.car.get_position_orientation()[0]) - self.target)
+        self.timestep = 0
 
         return self._get_observation()
+
+    def step(self, action): 
+        self.timestep += 1
+        return super().step(action)
 
     def _get_done(self): 
         ''' 
@@ -89,6 +95,10 @@ class Driving0(DrivingEnv):
         Euclidean distance between car and target. 
         '''
         currPos, _= self.car.get_position_orientation()
+
+        if self.timestep >= 1200: 
+            self.done = True
+            return 0
 
         if abs(currPos[0]) > 14.8 or abs(currPos[1]) > 14.8: 
             self.done = True

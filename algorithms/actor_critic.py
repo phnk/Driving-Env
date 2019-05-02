@@ -13,8 +13,6 @@ import numpy as np
 import torch.nn as nn
 from util import *
 
-import time
-
 
 def load_checkpoint(checkpoint_path, config): 
     '''
@@ -84,28 +82,28 @@ def save_checkpoint(checkpoint_path, policy, optim, critic, critic_optim,
 
 def main(): 
     '''
-    Calls training procedure.
+    Calls training procedure for actor critic.
     '''
 
     # Hyperparameters
     config = { 
     'action_dim': None,
     'ob_dim': None,
-    'policy_hidden_units': [32, 32],
-    'critic_hidden_units': [32, 32],
+    'policy_hidden_units': [64, 64],
+    'critic_hidden_units': [64, 64],
     'std_init': None,
     'policy_lr': 1e-3,
     'critic_lr': 5e-3,
     'std_lr': 1e-2,
-    'max_steps': 800,
-    'batch_size': 2400,
+    'max_steps': 500,
+    'batch_size': 2000,
     'max_episodes': 4, 
-    'critic_max_batch': 128,
-    'discount': 0.98,
+    'critic_max_batch': 256,
+    'discount': 0.99,
     'epochs': 0
     }
 
-    env = gym.make('Driving-v1')
+    env = gym.make('Driving-v0')
     config['action_dim'] = env.action_space.low.size
     config['ob_dim'] = env.observation_space.low.size
     
@@ -223,3 +221,4 @@ def main():
 
 if __name__ == '__main__': 
     main()
+

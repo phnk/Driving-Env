@@ -158,7 +158,7 @@ def main():
                 episodes += 1
                 episode_reward.append(sum(rewards[episode_start_step:]))
 
-                # Calculate td targets for each critic pred
+                # Calculate n step td targets 
 
                 # Exit if can't run another episode in batch size
                 if step + config['max_steps'] > config['batch_size']:
@@ -170,24 +170,6 @@ def main():
                 episode_start_step = step 
                 ob = torch.from_numpy(env.reset()).float().to(device)
                 rewards = []
-
-        # Compute critic loss by randomized batch sampling 
-        critic_targ = rewards.copy()
-        shuffle_together(critic_targ, critic_pred)
-        size = min(len(rewards) // episodes + 1, config['critic_max_batch'])
-        for targs, preds in zip(batch(critic_targ, size), 
-                batch(critic_pred, size)):
-            critic_optim.zero_grad()
-            critic_loss(torch.stack(preds).view(-1, 1),
-                torch.tensor(targs, dtype=torch.float32).view(-1, 1)).backward()
-            critic_optim.step()
-
-        # Calculate advantage from evaluated critic
-        advantage = []
-        with torch.no_grad():
-            for rew, ob in zip(rewards, observations):
-                advantage.append(rew - critic(ob))
-        advantage = z_score_rewards(advantage)
 
         # Compute actor loss
         loss = 0
