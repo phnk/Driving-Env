@@ -3,7 +3,7 @@ import gym_driving
 import tensorflow as tf
 from stable_baselines.common.policies import MlpPolicy
 from stable_baselines.common.vec_env import DummyVecEnv
-from stable_baselines import TRPO
+from stable_baselines import PPO1
 import matplotlib.pyplot as plt
 import pickle
 
@@ -21,31 +21,31 @@ def graph_reward(ep_reward):
 
 def main(): 
     ''' 
-    Trains baselines TRPO.
+    Trains baselines PPO.
     '''
     total_steps = 1200 * 800
-    policy_kwargs = dict(act_fun=tf.nn.relu, net_arch=[64, 64])
+    policy_kwarg = dict(act_fun=tf.nn.relu, net_arch=[64, 64])
 
-    env = gym.make('Driving-v1')
+    env = gym.make('Driving-v0')
     env.seed(1)
     env = DummyVecEnv([lambda: env])
-    model = TRPO('MlpPolicy', env, verbose=0, policy_kwargs=policy_kwargs, 
-        timesteps_per_batch=24000)
+    model = PPO1('MlpPolicy', env, verbose=0, policy_kwargs=policy_kwarg,
+    timesteps_per_actorbatch=4096)
 
     logger = {'rewards': [], 'lengths': []}
     model.learn(total_timesteps=total_steps, gerard_logger=logger)
-    model.save('saved_trpo_v1')
+    model.save('saved_ppo_v1')
 
-    with open('trpo_v1_rew', 'wb') as fp: 
-        dic = {'trpo': logger}
+    with open('ppo_v1_rew', 'wb') as fp: 
+        dic = {'ppo': logger}
         pickle.dump(dic, fp)
 
 def render(): 
     env = gym.make('Driving-v1')
     env = DummyVecEnv([lambda: env])
-    model = TRPO.load('saved_trpo_v1')
+    model = TRPO.load('saved_ppo_v1')
 
-    with open('trpo_rew_per_episode', 'rb') as fp: 
+    with open('ppo_rew_per_episode', 'rb') as fp: 
         reward = pickle.load(fp)
     print(reward)
     ob = env.reset()

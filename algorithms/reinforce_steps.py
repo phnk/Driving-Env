@@ -72,17 +72,17 @@ def main():
     config = { 
     'action_dim': None,
     'ob_dim': None,
-    'policy_hidden_units': [32],
+    'policy_hidden_units': [64, 64],
     'max_steps': 1200,
-    'batch_size': 6000,
-    'max_episodes': 10, 
+    'batch_size': 24000,
+    'max_episodes': 30, 
     'discount': 0.99,
     'policy_lr': 1e-3,
     'std_lr': 1e-2,
     'epochs': 5
     }
 
-    env = gym.make('Driving-v0')
+    env = gym.make('Driving-v1')
     config['action_dim'] = env.action_space.low.size
     config['ob_dim'] = env.observation_space.low.size
 

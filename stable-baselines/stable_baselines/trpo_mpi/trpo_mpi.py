@@ -321,10 +321,12 @@ class TRPO(ActorCriticRLModel):
                     for k in range(self.g_step):
                         with self.timed("sampling"):
                             seg = seg_gen.__next__()
-                            gerard_logger.extend(seg['ep_true_rets'])
-                            if len(seg['ep_true_rets']): 
-                                print(len(gerard_logger), ": ",
-                                    round(gerard_logger[-1], 3))
+                            gerard_logger['rewards'].extend(seg['ep_true_rets'])
+                            gerard_logger['lengths'].extend(seg['ep_lens'])
+                            ger_len = len(seg['ep_true_rets'])
+                            print(len(gerard_logger['rewards']), ": ",
+                                round(sum(gerard_logger['rewards'][-ger_len:]) /
+                                ger_len, 2))
                         add_vtarg_and_adv(seg, self.gamma, self.lam)
                         # ob, ac, atarg, ret, td1ret = map(np.concatenate, (obs, acs, atargs, rets, td1rets))
                         observation, action, atarg, tdlamret = seg["ob"], seg["ac"], seg["adv"], seg["tdlamret"]

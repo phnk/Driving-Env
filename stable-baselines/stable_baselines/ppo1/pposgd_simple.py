@@ -188,7 +188,7 @@ class PPO1(ActorCriticRLModel):
                                                        losses)
 
     def learn(self, total_timesteps, callback=None, seed=None, log_interval=100, tb_log_name="PPO1",
-              reset_num_timesteps=True):
+              reset_num_timesteps=True, gerard_logger=None):
 
         new_tb_log = self._init_num_timesteps(reset_num_timesteps)
 
@@ -236,6 +236,12 @@ class PPO1(ActorCriticRLModel):
                     logger.log("********** Iteration %i ************" % iters_so_far)
 
                     seg = seg_gen.__next__()
+                    gerard_logger.extend(seg['ep_true_rets'])
+                    if len(seg['ep_true_rets']): 
+                        print(len(gerard_logger), ": ",
+                            round(sum(gerard_logger[-len(seg['ep_true_rets']):])
+                                / len(seg['ep_true_rets']) , 3))
+
                     add_vtarg_and_adv(seg, self.gamma, self.lam)
 
                     # ob, ac, atarg, ret, td1ret = map(np.concatenate, (obs, acs, atargs, rets, td1rets))
