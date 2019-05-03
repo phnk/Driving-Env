@@ -1,5 +1,5 @@
 # gym-driving
-Eventually an OpenAI gym environment. 
+Eventually an OpenAI gym environment. In development. 
 
 ### To install: 
 
@@ -27,6 +27,3 @@ Please add any local URDFs under gym_driving/resources. Use getResourcePath
 (this is already imported in driving_env) with the filename when loading the
 URDF to get a system independent path. 
 
-### TODO: 
-
-Create documentation. Create new environments, test existing built one (Driving-v0) with baselines algorithms. 

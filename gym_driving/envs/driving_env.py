@@ -47,9 +47,12 @@ class DrivingEnv(gym.Env):
     '''
     metadata = {'render.modes': ['human']}
     
-    def __init__(self, additional_observation=None):
+    def __init__(self, additional_observation=None, frame_skip=1):
         # Number of lidar segments for car 
         self.lidar_seg = 18
+
+        # Set frameskip
+        self.frame_skip = frame_skip
 
         # Set up action space
         self.action_space = spaces.Box(np.array([0, 0, -.6]), 
@@ -77,6 +80,7 @@ class DrivingEnv(gym.Env):
         self.imgsize = 100
         self.img = None
 
+
     def step(self, action): 
         '''
         Applies an action and returns environment information.
@@ -95,13 +99,14 @@ class DrivingEnv(gym.Env):
             Computed observation, reward, done state, and info after 
             the action is applied to the environment. 
         '''
-        # Ensure action valid and call action 
+        # Cast to np and clip to action space
         action = np.asarray(action)
         action = action.clip(self.action_space.low, self.action_space.high)
-        self._apply_action(action) 
-        p.stepSimulation()
-
-        self.timestep += 1
+        # Perform action
+        for _ in range(self.frame_skip):
+            self._apply_action(action) 
+            p.stepSimulation()
+            self.timestep += 1
 
         # Retrieve observation
         observation = self._get_observation()

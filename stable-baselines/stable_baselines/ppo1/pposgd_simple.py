@@ -223,6 +223,7 @@ class PPO1(ActorCriticRLModel):
                         # compatibility with callbacks that have no return statement.
                         if callback(locals(), globals()) is False:
                             break
+                    print(timesteps_so_far)
                     if total_timesteps and timesteps_so_far >= total_timesteps:
                         break
 
@@ -236,12 +237,13 @@ class PPO1(ActorCriticRLModel):
                     logger.log("********** Iteration %i ************" % iters_so_far)
 
                     seg = seg_gen.__next__()
-                    gerard_logger.extend(seg['ep_true_rets'])
                     if len(seg['ep_true_rets']): 
-                        print(len(gerard_logger), ": ",
-                            round(sum(gerard_logger[-len(seg['ep_true_rets']):])
-                                / len(seg['ep_true_rets']) , 3))
-
+                        gerard_logger['rewards'].extend(seg['ep_true_rets'])
+                        gerard_logger['lengths'].extend(seg['ep_lens'])
+                        ger_len = len(seg['ep_true_rets'])
+                        print(len(gerard_logger['rewards']), ": ",
+                            round(sum(gerard_logger['rewards'][-ger_len:]) /
+                            ger_len, 2))
                     add_vtarg_and_adv(seg, self.gamma, self.lam)
 
                     # ob, ac, atarg, ret, td1ret = map(np.concatenate, (obs, acs, atargs, rets, td1rets))
@@ -327,7 +329,7 @@ class PPO1(ActorCriticRLModel):
                         logger.record_tabular("EpRewMean", np.mean(rewbuffer))
                     logger.record_tabular("EpThisIter", len(lens))
                     episodes_so_far += len(lens)
-                    current_it_timesteps = MPI.COMM_WORLD.allreduce(seg["total_timestep"])
+                    current_it_timesteps = seg["total_timestep"]
                     timesteps_so_far += current_it_timesteps
                     self.num_timesteps += current_it_timesteps
                     iters_so_far += 1
