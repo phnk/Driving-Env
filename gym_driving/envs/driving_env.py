@@ -96,6 +96,7 @@ class DrivingEnv(gym.Env):
             the action is applied to the environment. 
         '''
         # Ensure action valid and call action 
+        action = np.asarray(action)
         action = action.clip(self.action_space.low, self.action_space.high)
         self._apply_action(action) 
         p.stepSimulation()
