@@ -36,9 +36,12 @@ class Driving1(DrivingEnv):
         ''' 
         Initialization to start simulation. Loads all proper objects. 
         '''
-        # Generate new target in front of car each episode
-        self.target = np.array((self.random.randint(5, 13), 
+        # Generate new target each episode
+        self.target = np.array(
+            (self.random.choice([-1, 1]) * self.random.randint(5, 13), 
              self.random.choice([-1, 1]) * self.random.randint(5,13)))
+        # Place obstacle between car and target 
+        self.obstacle = (self.target / 2) + self.random.normal(scale=.5, size=2)
 
         # Default initialization of car, plane, and gravity 
         super().reset()
@@ -47,7 +50,7 @@ class Driving1(DrivingEnv):
         Cube(list(self.target) +  [0], 2, marker=True, client=self.client)
 
         # Obstacle 
-        Cube(list(self.target / 2) + [0], 3, client=self.client)
+        Cube(list(self.obstacle) + [0], 2, client=self.client)
 
         self.done = False
         self.prev_dist = np.linalg.norm(np.array(
@@ -88,24 +91,32 @@ class Driving1(DrivingEnv):
         float
         Euclidean distance between car and target. 
         '''
+        if self.timestep >= 1200: 
+            self.done = True
+            return 0
+
         currPos, _= self.car.get_position_orientation()
+        dist_to_obstacle = np.linalg.norm(currPos - self.obstacle)
 
         if abs(currPos[0]) > 14.8 or abs(currPos[1]) > 14.8:
             self.done = True
             return 0
+
         if self.car.get_collision(): 
             self.done = True
             return -50
 
-        distance = np.linalg.norm(currPos - self.target) 
-
+        distance = np.linalg.norm(currPos - self.target)
         if distance < 0.8: 
             self.done = True
             return 50
 
+        # Reward for moving forward
         reward = (self.prev_dist - distance) 
         reward = reward * 10 if reward > 0 else reward
-        reward -= self.step_lidar.sum() / self.lidar_seg
+        # Scaled penalty for being too close to obstacle
+        if dist_to_obstacle < 2: 
+            reward -= 0.10 / dist_to_obstacle**2
 
         self.prev_dist = distance
 

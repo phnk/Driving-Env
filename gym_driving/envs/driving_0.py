@@ -53,13 +53,8 @@ class Driving0(DrivingEnv):
         self.done = False
         self.prev_dist = np.linalg.norm(np.array(
             self.car.get_position_orientation()[0]) - self.target)
-        self.timestep = 0
 
         return self._get_observation()
-
-    def step(self, action): 
-        self.timestep += 1
-        return super().step(action)
 
     def _get_done(self): 
         ''' 
@@ -94,11 +89,11 @@ class Driving0(DrivingEnv):
         float
         Euclidean distance between car and target. 
         '''
-        currPos, _= self.car.get_position_orientation()
-
         if self.timestep >= 1200: 
             self.done = True
             return 0
+
+        currPos, _= self.car.get_position_orientation()
 
         if abs(currPos[0]) > 14.8 or abs(currPos[1]) > 14.8: 
             self.done = True

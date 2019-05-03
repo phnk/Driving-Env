@@ -49,7 +49,7 @@ class DrivingEnv(gym.Env):
     
     def __init__(self, additional_observation=None):
         # Number of lidar segments for car 
-        self.lidar_seg = 30
+        self.lidar_seg = 18
 
         # Set up action space
         self.action_space = spaces.Box(np.array([0, 0, -.6]), 
@@ -101,6 +101,8 @@ class DrivingEnv(gym.Env):
         self._apply_action(action) 
         p.stepSimulation()
 
+        self.timestep += 1
+
         # Retrieve observation
         observation = self._get_observation()
         
@@ -128,6 +130,9 @@ class DrivingEnv(gym.Env):
         self.plane = p.loadURDF(getResourcePath('plane/plane.urdf'), 
             physicsClientId=self.client)
         self.car = car.Car(self.lidar_seg, client=self.client)
+
+        self.timestep = 0
+
         return self._get_observation()
 
     def render(self, mode='human'):
