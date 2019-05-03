@@ -83,13 +83,13 @@ def main():
     config = { 
     'action_dim': None,
     'ob_dim': None,
-    'policy_hidden_units': [128, 128],
-    'max_trajectory': 500,
-    'episodes': 4,
+    'policy_hidden_units': [32],
+    'max_trajectory': 1500,
+    'episodes': 10,
     'discount': 0.99,
     'policy_lr': 5e-3,
     'std_lr': 1e-2,
-    'epochs': 50
+    'epochs': 400
     }
 
     env = gym.make('Driving-v0')

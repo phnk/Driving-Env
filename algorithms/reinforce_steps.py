@@ -72,14 +72,14 @@ def main():
     config = { 
     'action_dim': None,
     'ob_dim': None,
-    'policy_hidden_units': [32, 32],
-    'max_steps': 500,
-    'batch_size': 2000,
-    'max_episodes': 4, 
+    'policy_hidden_units': [32],
+    'max_steps': 1200,
+    'batch_size': 6000,
+    'max_episodes': 10, 
     'discount': 0.99,
     'policy_lr': 1e-3,
     'std_lr': 1e-2,
-    'epochs': 0,
+    'epochs': 5
     }
 
     env = gym.make('Driving-v0')
