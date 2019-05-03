@@ -40,9 +40,12 @@ class Driving0(DrivingEnv):
         Initialization to start simulation. Loads all proper objects. 
         '''
         # Generate new target in front of car each episode
-        self.target = np.array(
-            (self.random.choice([-1, 1]) * self.random.randint(5, 13), 
-             self.random.choice([-1, 1]) * self.random.randint(5,13)))
+        first_coord = self.random.randint(-13, 13)
+        second_coord = self.random.randint(0, 13) if abs(first_coord) > 5 else \
+                        self.random.randint(5, 13)
+        second_coord *= self.random.choice([-1, 1])
+        self.target = np.array((first_coord, second_coord) if
+                        np.random.randint(2) else (second_coord, first_coord))
 
         # Default initialization of car, plane, and gravity 
         super().reset()
