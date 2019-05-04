@@ -1,7 +1,6 @@
 ''' 
-Contains basic challenge of getting to goal with no obstacles.
+Driving-v0 environment. Target with no obstacles. 
 '''
-
 # OpenAI gym library imports 
 import gym 
 # External libraries 
@@ -15,13 +14,24 @@ from gym_driving.resources._cube import Cube
 
 class Driving0(DrivingEnv):
     '''
+    Drive towards a randomly placed target. Reaching the target yields
+    50 reward. Moving away or towards the target at each step provides
+    reward equal to the difference in Euclidean distance from the 
+    previous step.
+
     action_space : spaces.Box
         np.ndarray of size 3. [0, 1], [0, 1], [-.6, .6] range. First
         feature is throttle, second is break, third is central steering
         angle. 
+
+    observation_space : spaces.Box
+        np.ndarray of size 6. [-15, 15] * 2, [-1, 1] * 2, [-5, 5] * 2.
+        First pair is vector to target, second is unit vector of car 
+        orientation, and third is velocity vector.
+
+    Maximum episode length of 1200. Frame skip and reward modification 
+    easily available; see documentation. 
     '''
-    metadata = {'render.modes': ['human']}
-    
     def __init__(self, additional_observation=None):
         super().__init__()
 
@@ -45,7 +55,7 @@ class Driving0(DrivingEnv):
                         self.random.randint(5, 13)
         second_coord *= self.random.choice([-1, 1])
         self.target = np.array((first_coord, second_coord) if
-                        np.random.randint(2) else (second_coord, first_coord))
+                        self.random.randint(2) else (second_coord, first_coord))
 
         # Default initialization of car, plane, and gravity 
         super().reset()
@@ -61,12 +71,12 @@ class Driving0(DrivingEnv):
 
     def _get_done(self): 
         ''' 
-        Returns true if car reaches goal.
+        Returns true if episode done.
 
         Returns 
         -------
         bool 
-        True if reaches goal state.
+            True if episode done.
         '''
         return self.done
 
@@ -77,7 +87,7 @@ class Driving0(DrivingEnv):
         Returns
         -------
         np.ndarray
-        vector to target (2), orientation (2), velocity (2)
+            vector to target (2), unit orientation (2), velocity (2)
         '''
         pos, ori = self.car.get_position_orientation()
         vel = self.car.get_velocity()
@@ -90,25 +100,48 @@ class Driving0(DrivingEnv):
         Returns
         -------
         float
-        Euclidean distance between car and target. 
+
+        Non-terminal: 
+            A. Change from last step in Euclidean distance to target.
+        Returned float is value above directly.
+
+        Terminal: 
+            A. 50 for reaching target. 
+        Returned float is value above directly.
+
         '''
+        # Terminal from episode length over 1200
         if self.timestep >= 1200: 
             self.done = True
             return 0
 
         currPos, _= self.car.get_position_orientation()
 
+        # Terminal from driving off range
         if abs(currPos[0]) > 14.8 or abs(currPos[1]) > 14.8: 
             self.done = True
             return 0
 
         distance = np.linalg.norm(currPos - self.target) 
 
+        # Terminal from reaching target
         if distance < 0.8: 
             self.done = True
-            return 50
+            return (50 if self.reward_func is None else
+                self.reward_func(True, (50,)))
 
-        reward = (self.prev_dist - distance) 
+        # Change in distance
+        delta_distance = (self.prev_dist - distance) 
+
         self.prev_dist = distance
 
-        return reward * 10 if reward > 0 else reward
+        # Return either documented reward or scaled reward if there's a
+        # reward function
+        return (delta_distance if self.reward_func is None else 
+            self.reward_func(False, (delta_distance,)))
+
+    def __del__(self): 
+        ''' 
+        Call super del for any additional cleanup. 
+        '''
+        super().__del__()

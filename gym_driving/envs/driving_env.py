@@ -1,7 +1,6 @@
 ''' 
-Contains base DrivingEnv class for OpenAI gym Driving-v0 environment.
+Contains base DrivingEnv class for OpenAI gym_driving environments.
 '''
-
 # OpenAI gym library imports 
 import gym 
 from gym import error, spaces, utils
@@ -17,7 +16,6 @@ import gym_driving.resources._helper_functions as helper
 import gym_driving.resources._car as car
 import gym_driving.resources._cube as cube
 
-
 class DrivingEnv(gym.Env):
     '''
     Base class for environments. 
@@ -31,11 +29,13 @@ class DrivingEnv(gym.Env):
 
     Parameters
     ----------
-    additional_observation : tuple
+    additional_observation : tuple, optional
         Tuple of np.ndarray. Contains ranges of additional features 
         for observation space. [0] should be low range, [1] should be 
-        high range of additional observations. Used if 
-        _get_observation() overridden by any inheriting classes. 
+        high range of additional observations. 
+
+        The default observation space contains only the lidar 
+        observation. 
 
         Example: 
         Child environment has additional goal position of x, y returned
@@ -47,12 +47,12 @@ class DrivingEnv(gym.Env):
     '''
     metadata = {'render.modes': ['human']}
     
-    def __init__(self, additional_observation=None, frame_skip=1):
+    def __init__(self, additional_observation=None):
         # Number of lidar segments for car 
         self.lidar_seg = 18
 
         # Set frameskip
-        self.frame_skip = frame_skip
+        self.frame_skip = 1
 
         # Set up action space
         self.action_space = spaces.Box(np.array([0, 0, -.6]), 
@@ -71,6 +71,7 @@ class DrivingEnv(gym.Env):
         
         # Connect client 
         self.client = p.connect(p.DIRECT)
+        self.closed = False
         # Random generator used for any randomly gen behavior
         self.random = np.random.RandomState()
         # Seed the random created above
@@ -79,7 +80,26 @@ class DrivingEnv(gym.Env):
         # Set image for rendering
         self.imgsize = 100
         self.img = None
+        
+        # Used for reward function modification
+        self.reward_func = None
 
+    def modify(self, frame_skip=1, reward_func=None):
+        ''' 
+        Function used once after environment creation to specify frame 
+        skip and a modified reward function. 
+
+        See documentation for setting up a modified reward function.
+
+        Parameters 
+        ----------
+        frame_skip : int, optional 
+            Number of simulation time steps to apply the same action.
+        reward_func : function, optional
+            reward_func (bool, tuple of float); see documentation. 
+        '''
+        self.frame_skip= frame_skip
+        self.reward_func = reward_func
 
     def step(self, action): 
         '''
@@ -127,7 +147,7 @@ class DrivingEnv(gym.Env):
 
         Can be overridden by inheriting classes to create specific 
         environment. Can be called from super().reset() to just reset 
-        PyBullet client, gravity, plane, and car. 
+        PyBullet client, gravity, plane, and car, timestep.
         '''
         # Default initialization of car, plane, and gravity 
         p.resetSimulation(self.client)
@@ -180,6 +200,7 @@ class DrivingEnv(gym.Env):
         p.disconnect(self.client)
         if self.img is not None: 
             plt.close()
+        self.closed = True
 
     def seed(self, seed=None):
         '''
@@ -213,7 +234,7 @@ class DrivingEnv(gym.Env):
         Returns 
         -------
         bool 
-        True if car encounters collision. 
+            True if car encounters collision. 
         '''
         return self.car.get_collision()
     
@@ -240,8 +261,8 @@ class DrivingEnv(gym.Env):
         Returns
         -------
         np.ndarray
-        Environment observation, must abide to observation space 
-        dimensions. 
+            Environment observation, must abide to observation space 
+            dimensions. 
         '''
         return self.car.get_observation()
 
@@ -252,7 +273,14 @@ class DrivingEnv(gym.Env):
 
         Returns
         -------
-        int
+        float
             Amount of reward at time step.
          '''
         raise NotImplementedError('Reward function not overridden.')
+
+    def __del__(self): 
+        ''' 
+        Call close to remove from PyBullet client if user didn't close.
+        '''
+        if not self.closed: 
+            self.close() 

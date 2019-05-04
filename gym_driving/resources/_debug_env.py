@@ -34,7 +34,7 @@ def main():
         c.apply_action([throttle, breaking, steer])
         p.stepSimulation()
         if count % 100 == 0: 
-            print(c.get_lidar())
+            c._debug_lidar()
         time.sleep(0.001) 
 
 if __name__ == '__main__': 

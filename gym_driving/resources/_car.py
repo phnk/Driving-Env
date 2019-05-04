@@ -15,6 +15,8 @@ class Car:
 
     Parameters 
     ----------
+    lidar_seg : int
+        How many lidar segements the car should have. 
     client : int, optional 
         PyBullet client to attach to, default of 0. 
     '''
@@ -46,7 +48,7 @@ class Car:
         self.joint_speed = 0
 
         # Max-min range of lidar
-        self.lidar_range = 10
+        self.lidar_range = 8
         self.min_lidar_range = 0.2
         # Number of segments within covered area
         self.num_seg = lidar_seg
@@ -128,9 +130,10 @@ class Car:
 
         Returns 
         -------
-        position(2), orientation(2), velocity(2), wheel angle(1), 
+        np.ndarray
+            position(2), orientation(2), velocity(2), wheel angle(1), 
             lidar(self.num_seg)
-        Range: [-inf, inf], [-1, 1], [-5, 5], [-.7, .7], [0, 1]
+            Range [-inf, inf], [-1, 1], [-5, 5], [-.7, .7], [0, 1]
         '''
         pos, ori, angle = self.get_position_orientation(True)
         lidar = self.get_lidar(angle)
@@ -148,7 +151,7 @@ class Car:
 
         Returns
         -------
-        int 
+        float 
             Speed of car in m/s. 
         '''
         return np.linalg.norm(self.get_velocity())
@@ -160,7 +163,7 @@ class Car:
         Returns
         -------
         np.ndarray 
-            x, y, z speed in m/s.
+            x, y speed in m/s.
         '''
         return np.array(p.getBaseVelocity(self.car, self.client)[0])[0:2]
 
@@ -171,7 +174,7 @@ class Car:
         Returns
         -------
         bool 
-        Status of collision of car. 
+            Status of collision of car. 
         '''
         contact = p.getContactPoints(bodyA=self.car, linkIndexA=0,
             physicsClientId=self.client)
@@ -190,12 +193,12 @@ class Car:
         -------
             angle : False
         np.ndarray, np.ndarray
-        Position, orientation car in x, y coordinates
+            Position, orientation car in x, y coordinates
 
             angle : True
         np.ndarray, np.ndarray, float
-        Position, orientation car in x, y coordinates, angle of car.
-        Angle is between [-pi, pi]. 
+            Position, orientation car in x, y coordinates, angle of car.
+            Angle is between [-pi, pi]. 
         '''
         pos, ang = p.getBasePositionAndOrientation(self.car, self.client)
         ang = p.getEulerFromQuaternion(ang)
@@ -224,6 +227,7 @@ class Car:
         angle : int, optional 
             Optionally pass angle of car in radians to prevent overhead
             of additional call to get angle of car. 
+            See Car.get_position_orientation.
         
         Returns
         -------

@@ -16,7 +16,7 @@ def graph_reward(ep_reward):
     ax.plot(ep_reward)
     ran = (max(ep_reward) - min(ep_reward)) * 0.1
     ax.set_ylim((min(ep_reward) - ran, max(ep_reward) + ran))
-    ax.set_title('Reward per episode.')
+    ax.set_title('Reward per timestep.')
     plt.show()
 
 def main(): 
@@ -41,22 +41,32 @@ def main():
         pickle.dump(dic, fp)
 
 def render(): 
-    env = gym.make('Driving-v1')
+    env = gym.make('Driving-v0')
+    env.seed(3)
     env = DummyVecEnv([lambda: env])
-    model = TRPO.load('saved_ppo_v1')
+    model = PPO1.load('saved_ppo_v0')
 
     with open('ppo_v1_rew', 'rb') as fp: 
         logger = pickle.load(fp)
 
-    print(reward)
+    reward = [] 
     ob = env.reset()
     while True: 
         action, _states = model.predict(ob)
         ob, rew, done, _ = env.step(action)
+        print(round(rew.item(), 3))
         if done: 
             break
+        reward.append(rew.item())
         env.render()
     env.close()
 
+    graph_reward(reward)
+
+    print('SUM OF REWARD: ', sum(reward))
+    for ind in range(len(reward) - 2, -1, -1): 
+        reward[ind] += reward[ind + 1] * 0.99
+    print('SUM OF REWARD GAMMA 0.99: ', sum(reward))
+
 if __name__ == '__main__': 
-    main()
+    render()
