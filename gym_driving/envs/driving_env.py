@@ -127,6 +127,8 @@ class DrivingEnv(gym.Env):
             self._apply_action(action) 
             p.stepSimulation()
             self.timestep += 1
+            if self._get_done(frame_skip=True):
+                break
 
         # Retrieve observation
         observation = self._get_observation()

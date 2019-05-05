@@ -83,15 +83,38 @@ class Driving1(DrivingEnv):
 
         return observation
 
-    def _get_done(self): 
+    def _get_done(self, frame_skip=False): 
         ''' 
         Returns true if done.
+
+        Parameters
+        ----------
+        frame_skip : bool, optional 
+            If True, forces _get_done() to perform done calculations 
+            without relying on other functions (like _get_reward()) to
+            update the done status. 
 
         Returns 
         -------
         bool 
         '''
-        return self.done
+        if not frame_skip:
+            return self.done
+
+        currPos, _= self.car.get_position_orientation()
+        # Terminal from episode length over 1200
+        if self.timestep >= 1200: 
+            return True
+        # Terminal from driving off range
+        if abs(currPos[0]) > 14.8 or abs(currPos[1]) > 14.8: 
+            return True
+        # Terminal from collision
+        if self.car.get_collision(): 
+            return True
+        # Terminal from reaching target
+        if np.linalg.norm(currPos - self.target) < 0.8: 
+            return True
+        return False
 
     def _get_observation(self): 
         ''' 

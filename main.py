@@ -16,33 +16,18 @@ def reward_func(end, rew):
 
 def main():
     rewa = []
-    env = gym.make('Driving-v1')
-    env.modify(reward_func=reward_func, frame_skip=3)
+    env = gym.make('Driving-v0')
+    env.modify(frame_skip=5000)
     env.seed(8)
     ob = env.reset()
 
-    for _ in range(200): 
-        _, rew, done, _ = env.step([1, 0, -0.05])
+    for _ in range(5000): 
+        _, rew, done, _ = env.step([1, 0, 0.009])
         env.render()
+        print(rew)
         if done: 
             break
-        rewa.append(rew)
-    for _ in range(100): 
-        if done: 
-            break
-        _, rew, done, _ = env.step([1, 0, 0.2])
-        env.render()
-        if done: 
-            break
-        rewa.append(rew)
-    for _ in range(300): 
-        if done: 
-            break
-        _, rew, done, _ = env.step([1, 0, 0])
-        env.render()
-        if done: 
-            break
-        rewa.append(rew)
+    print(sum(rewa))
 
     print(sum(rewa))
 
