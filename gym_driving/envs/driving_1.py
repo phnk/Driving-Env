@@ -14,8 +14,8 @@ from gym_driving.resources._cube import Cube
 class Driving1(DrivingEnv):
     '''
     Drive towards a randomly placed target, with an obstacle in-between.
-    Reaching the target yields 50 reward, colliding with the obstacle is
-    -50. Moving away or towards the target at each step provides
+    Reaching the target yields 20 reward, colliding with the obstacle is
+    -20. Moving away or towards the target at each step provides
     reward equal to the difference in Euclidean distance from the 
     previous step. When the car is too close to the obstacle, reward
     penalization inversely squared to the distance from the obstacle is
@@ -40,15 +40,17 @@ class Driving1(DrivingEnv):
         to the target. 21-22 is the unit vector of car orientation. 
         23-24 is car's velocity vector.
 
-    Maximum episode length of 1200. Frame skip and reward modification 
+    Maximum episode length of 1000. Frame skip and reward modification 
     easily available; see documentation. 
 
     '''
-    def __init__(self, additional_observation=None):
+    def __init__(self):
         # Add car observations to observation space
         low = np.array([-15, -15, -1, -1, -5, -5])
         high = np.array([15, 15, 1, 1, 5, 5])
         super().__init__((low, high))
+
+        self.reward_range = (-20, 20)
 
         self.done = False
         self.prev_dist = None
@@ -102,8 +104,8 @@ class Driving1(DrivingEnv):
             return self.done
 
         currPos, _= self.car.get_position_orientation()
-        # Terminal from episode length over 1200
-        if self.timestep >= 1200: 
+        # Terminal from episode length over 1000
+        if self.timestep >= 1000: 
             return True
         # Terminal from driving off range
         if abs(currPos[0]) > 14.8 or abs(currPos[1]) > 14.8: 
@@ -144,11 +146,11 @@ class Driving1(DrivingEnv):
         Returned float is A - (0.01 / B**2) when B < 2, is A when B > 2
 
         Terminal: 
-            A. 50 for reaching target, -50 for colliding with obstacle.
+            A. 20 for reaching target, -20 for colliding with obstacle.
         Returned float is value above directly.
         '''
-        # Terminal from episode length over 1200
-        if self.timestep >= 1200: 
+        # Terminal from episode length over 1000
+        if self.timestep >= 1000: 
             self.done = True
             return 0
 
@@ -162,22 +164,22 @@ class Driving1(DrivingEnv):
         # Terminal from collision
         if self.car.get_collision(): 
             self.done = True
-            return (-50 if self.reward_func is None else
-                self.reward_func(True, (-50,)))
+            return (-20 if self.reward_func is None else
+                self.reward_func(True, (-20,)))
 
         # Terminal from reaching target
         distance = np.linalg.norm(currPos - self.target)
         if distance < 0.8: 
             self.done = True
-            return (50 if self.reward_func is None else
-                self.reward_func(True, (50,)))
+            return (20 if self.reward_func is None else
+                self.reward_func(True, (20,)))
 
         # Change in distance
         delta_distance = (self.prev_dist - distance) 
         # Scaled penalty for being too close to obstacle
         dist_to_obstacle = np.linalg.norm(currPos - self.obstacle)
-        obstacle_penalty = (0.01 / dist_to_obstacle**2 if dist_to_obstacle < 2
-                            else 0) 
+        obstacle_penalty = (0.01 / dist_to_obstacle**2 if dist_to_obstacle <
+            2 else 0) 
         
         self.prev_dist = distance
 

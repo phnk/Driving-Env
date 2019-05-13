@@ -71,6 +71,7 @@ class DrivingEnv(gym.Env):
         
         # Connect client 
         self.client = p.connect(p.DIRECT)
+        p.setTimeStep(1/120, self.client)
         self.closed = False
         # Random generator used for any randomly gen behavior
         self.random = np.random.RandomState()
@@ -138,7 +139,6 @@ class DrivingEnv(gym.Env):
 
         # Retrieve done status
         done = self._get_done()
-
 
         # Return observation, reward, done, {} 
         return observation, reward, done, dict()

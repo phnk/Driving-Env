@@ -14,8 +14,8 @@ from gym_driving.resources._cube import Cube
 
 class Driving0(DrivingEnv):
     '''
-    Drive towards a randomly placed target. Reaching the target yields
-    50 reward. Moving away or towards the target at each step provides
+    Drive towards a randomly placed target. Reaching the target is 20
+    reward. Moving away or towards the target at each step provides
     reward equal to the difference in Euclidean distance from the 
     previous step.
 
@@ -29,10 +29,10 @@ class Driving0(DrivingEnv):
         First pair is vector to target, second is unit vector of car 
         orientation, and third is velocity vector.
 
-    Maximum episode length of 1200. Frame skip and reward modification 
+    Maximum episode length of 1000. Frame skip and reward modification 
     easily available; see documentation. 
     '''
-    def __init__(self, additional_observation=None):
+    def __init__(self):
         super().__init__()
 
         # Reset observation space as there is no lidar
@@ -43,7 +43,7 @@ class Driving0(DrivingEnv):
 
         self.prev_dist = None
         self.done = False
-        self.reward_range = (-1, 50)
+        self.reward_range = (-1, 20)
                                            
     def reset(self):
         ''' 
@@ -89,8 +89,8 @@ class Driving0(DrivingEnv):
             return self.done
 
         currPos, _= self.car.get_position_orientation()
-        # Terminal from episode length over 1200
-        if self.timestep >= 1200: 
+        # Terminal from episode length over 1000
+        if self.timestep >= 1000: 
             return True
        # Terminal from driving off range
         if abs(currPos[0]) > 14.8 or abs(currPos[1]) > 14.8: 
@@ -126,12 +126,12 @@ class Driving0(DrivingEnv):
         Returned float is value above directly.
 
         Terminal: 
-            A. 50 for reaching target. 
+            A. 20 for reaching target. 
         Returned float is value above directly.
 
         '''
-        # Terminal from episode length over 1200
-        if self.timestep >= 1200: 
+        # Terminal from episode length over 1000
+        if self.timestep >= 1000: 
             self.done = True
             return 0
 
@@ -147,8 +147,8 @@ class Driving0(DrivingEnv):
         # Terminal from reaching target
         if distance < 0.8: 
             self.done = True
-            return (50 if self.reward_func is None else
-                self.reward_func(True, (50,)))
+            return (20 if self.reward_func is None else
+                self.reward_func(True, (20,)))
 
         # Change in distance
         delta_distance = (self.prev_dist - distance) 

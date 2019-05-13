@@ -7,6 +7,7 @@ from gym_driving.resources import getResourcePath
 import gym_driving.resources._helper_functions as helper
 import gym_driving.resources._car as car
 from gym_driving.resources._moving_cube import MovingCube
+from gym_driving.resources._cube import Cube
 import time
 
 def main(): 
@@ -20,11 +21,8 @@ def main():
     c = car.Car(10)
     a = p.loadURDF(getResourcePath('plane/plane.urdf'))
 
-    cub = MovingCube([3, 0, 0], [1, 5, 0], size=3)
-
-    count = 0
+    Cube((6, 0, 0), 1)
     while True: 
-        count += 1
         throttle = p.readUserDebugParameter(t)
         breaking = p.readUserDebugParameter(b)
         steer = p.readUserDebugParameter(s)
@@ -33,12 +31,8 @@ def main():
             p.disconnect(0)
             exit()
         c.apply_action([throttle, breaking, steer])
-        cub.step()
-#        print(cub.get_position())
         p.stepSimulation()
         time.sleep(0.001) 
-        if count > 1200: 
-            exit()
 
 if __name__ == '__main__': 
     main()
