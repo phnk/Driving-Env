@@ -14,6 +14,11 @@ register(
     )
 
 register(
+    id='Driving-v2', 
+    entry_point='gym_driving.envs:Driving2',
+    )
+
+register(
     id='Driving-v3', 
     entry_point='gym_driving.envs:Driving3',
     )

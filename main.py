@@ -16,22 +16,21 @@ def reward_func(end, rew):
 
 def main():
     rewa = []
-    env = gym.make('Driving-v0')
-    env.modify(frame_skip=5000)
-    env.seed(8)
-    ob = env.reset()
+    env = gym.make('Driving-v2')
+    env.reset()
+    reward = list()
 
-    for _ in range(5000): 
-        _, rew, done, _ = env.step([1, 0, 0.009])
+    
+    for _ in range(300): 
+        _, rew, done, _ = env.step([1, 0, 0.04])
+        reward.append(rew)
         env.render()
-        print(rew)
         if done: 
             break
-    print(sum(rewa))
-
-    print(sum(rewa))
-
     env.close()
+    plt.plot(reward[:-1])
+    plt.show()
+
 if __name__ == '__main__': 
     main()
 

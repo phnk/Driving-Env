@@ -3,7 +3,7 @@ import gym_driving
 import tensorflow as tf
 from stable_baselines.common.policies import MlpPolicy
 from stable_baselines.common.vec_env import DummyVecEnv
-from stable_baselines import PPO1
+from stable_baselines import PPO2
 import matplotlib.pyplot as plt
 import pickle
 
@@ -21,19 +21,18 @@ def graph_reward(ep_reward):
 
 def main(): 
     ''' 
-    Trains baselines PPO.
+    Trains baselines PPO2.
     '''
-    total_steps = (1200 * 800)
+    total_steps = (1000 * 800)
     policy_kwarg = dict(act_fun=tf.nn.relu, net_arch=[64, 64])
 
     env = gym.make('Driving-v0')
     env.seed(1)
     env = DummyVecEnv([lambda: env])
-    model = PPO1('MlpPolicy', env, verbose=0, policy_kwargs=policy_kwarg,
-        timesteps_per_actorbatch=4096)
+    model = PPO2('MlpPolicy', env, policy_kwargs=policy_kwarg, verbose=1)
 
     logger = {'rewards': [], 'lengths': []}
-    model.learn(total_timesteps=total_steps, gerard_logger=logger)
+    model.learn(total_timesteps=total_steps)
     model.save('saved_ppo_v1')
 
     with open('ppo_v1_rew', 'wb') as fp: 
@@ -69,4 +68,4 @@ def render():
     print('SUM OF REWARD GAMMA 0.99: ', sum(reward))
 
 if __name__ == '__main__': 
-    render()
+    main()

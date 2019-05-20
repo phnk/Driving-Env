@@ -11,17 +11,17 @@ from gym_driving.envs.driving_env import DrivingEnv
 import gym_driving.resources._car as car
 from gym_driving.resources._cube import Cube
 
-class Driving1(DrivingEnv):
+class Driving2(DrivingEnv):
     '''
-    Drive towards a randomly placed target, with an obstacle in-between.
-    Reaching the target yields 20 reward, colliding with the obstacle is
-    -20. Moving away or towards the target at each step provides
-    reward equal to the difference in Euclidean distance from the 
-    previous step. When the car is too close to the obstacle, reward
-    penalization inversely squared to the distance from the obstacle is
-    applied. 
+    Drive towards a randomly placed target, with multiple obstacles in-
+    between. Reaching the target is 20 reward, any collisions is -20.
+    Moving away or towards the target at each step provides reward 
+    equal to the difference in Euclidean distance from the previous 
+    step. When the car is too close to the obstacles, reward 
+    penalization inversely squared to the distance from the obstacles 
+    is applied.
 
-    Lidar is used to infer where the obstacle is (see observation_space)
+    Lidar is used to infer where obstacles are (see observation_space)
     where area around the car is divided into arcs of 20 degrees. If no
     obstacle is present in the arc, the arc's corresponding dimension is
     0. Closer obstacles will register with greater numbers, up to 1, 
@@ -49,8 +49,6 @@ class Driving1(DrivingEnv):
         high = np.array([15, 15, 1, 1, 5, 5])
         super().__init__((low, high))
 
-        self.reward_range = (-20, 20)
-
         self.done = False
         self.prev_dist = None
                                            
@@ -66,17 +64,31 @@ class Driving1(DrivingEnv):
         self.target = np.array((first_coord, second_coord) if
                         self.random.randint(2) else (second_coord, first_coord))
 
-        # Place obstacle between car and target 
-        self.obstacle = (self.target / 2) + self.random.normal(scale=.5, size=2)
-
         # Default initialization of car, plane, and gravity 
         observation = super().reset()
 
+        self.target = np.array((6, 2))
+
+        # Generate and place obstacles without overlap
+        perpendicular = np.array((self.target[1], -self.target[0]))
+        lower = self.target * 0.25
+        upper = self.target * 0.8
+        self.obstacles = []
+        tries = 0
+        while tries < 20:
+            tries += 1
+            ob = self.random.uniform(lower, upper) + (perpendicular * 
+                self.random.uniform(-0.5, 0.5))
+            size = self.random.randint(1, 5)
+            for other_ob, other_size in self.obstacles: 
+                if True in (abs(other_ob - ob) < (size / 10. + other_size/10.)):
+                    break
+            else: 
+                self.obstacles.append((ob, size))
+                Cube(list(ob) + [0], size, client=self.client)
+
         # Visual display of target
         Cube(list(self.target) +  [0], 2, marker=True, client=self.client)
-
-        # Obstacle 
-        Cube(list(self.obstacle) + [0], 3, client=self.client)
 
         self.done = False
         self.prev_dist = np.linalg.norm(np.array(
@@ -141,8 +153,10 @@ class Driving1(DrivingEnv):
         float
         Non-terminal: 
             A. Change from last step in Euclidean distance to target.
-            B. Distance from obstacle
-        Returned float is A - (0.01 / B**2) when B < 2, is A when B > 2
+            B. List of distance to obstacles 
+        Penalty for each individual obstacle is 0.01 / distance**2 if 
+        distance < 1.6 else 0. 
+        Returned float is A - sum(Penalty) over all obstacles. 
 
         Terminal: 
             A. 20 for reaching target, -20 for colliding with obstacle.
@@ -175,17 +189,19 @@ class Driving1(DrivingEnv):
 
         # Change in distance
         delta_distance = (self.prev_dist - distance) 
-        # Scaled penalty for being too close to obstacle
-        dist_to_obstacle = np.linalg.norm(currPos - self.obstacle)
-        obstacle_penalty = (0.01 / dist_to_obstacle**2 if dist_to_obstacle <
-            2 else 0) 
-        
+        dist_to_obstacles = [np.linalg.norm(currPos - ob) - size / 10. for 
+            ob, size in self.obstacles]
+        # Scaled penalty for being too close to obstacles
+        obstacle_penalty = 0        
+        for dist in dist_to_obstacles: 
+            obstacle_penalty += (0.01 / dist**2 if dist < 1.6 else 0)
+
         self.prev_dist = distance
 
         # Return either documented reward or scaled reward if there's a
         # reward function
         return (delta_distance - obstacle_penalty if self.reward_func is None
-            else self.reward_func(False, (delta_distance, dist_to_obstacle)))
+            else self.reward_func(False, (delta_distance, dist_to_obstacles)))
 
     def __del__(self): 
         ''' 
