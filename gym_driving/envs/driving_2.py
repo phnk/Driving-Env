@@ -67,8 +67,6 @@ class Driving2(DrivingEnv):
         # Default initialization of car, plane, and gravity 
         observation = super().reset()
 
-        self.target = np.array((6, 2))
-
         # Generate and place obstacles without overlap
         perpendicular = np.array((self.target[1], -self.target[0]))
         lower = self.target * 0.25

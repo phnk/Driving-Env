@@ -17,6 +17,7 @@ def reward_func(end, rew):
 def main():
     rewa = []
     env = gym.make('Driving-v2')
+    env.seed(4)
     env.reset()
     reward = list()
 
