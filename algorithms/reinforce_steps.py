@@ -79,10 +79,10 @@ def main():
     'discount': 0.99,
     'policy_lr': 1e-3,
     'std_lr': 1e-2,
-    'epochs': 5
+    'epochs': 100
     }
 
-    env = gym.make('Driving-v1')
+    env = gym.make('Driving-v0')
     config['action_dim'] = env.action_space.low.size
     config['ob_dim'] = env.observation_space.low.size
 
@@ -147,7 +147,7 @@ def main():
         optim.step()
 
         # Save checkpoint 
-        if ep % 5 == 0: 
+        if ep % 1 == 0: 
             print('Sigma: ', [round(i, 3) for i in std.detach().numpy()])
             print(f'Episode {len(episode_reward)}\t'
                   'Reward:\t', round(sum(episode_reward[-(episodes - 1):])

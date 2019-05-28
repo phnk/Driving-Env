@@ -1,9 +1,11 @@
 import gym 
 import gym_driving
 import tensorflow as tf
+import numpy as np
 from stable_baselines.common.policies import MlpPolicy
 from stable_baselines.common.vec_env import DummyVecEnv
-from stable_baselines import PPO2
+from stable_baselines.common import set_global_seeds
+from stable_baselines import PPO1
 import matplotlib.pyplot as plt
 import pickle
 
@@ -21,51 +23,32 @@ def graph_reward(ep_reward):
 
 def main(): 
     ''' 
-    Trains baselines PPO2.
+    Trains baselines PPO.
     '''
-    total_steps = (1000 * 800)
-    policy_kwarg = dict(act_fun=tf.nn.relu, net_arch=[64, 64])
+    total_steps = (1000 * 1000)
+    policy_kwarg = dict(act_fun=tf.nn.tanh, net_arch=[64, 64])
+    seed = 1
 
     env = gym.make('Driving-v0')
-    env.seed(1)
+    env.seed(seed)
+    tf.random.set_random_seed(seed)
+    tf.set_random_seed(seed)
+    np.random.seed(seed)
+    set_global_seeds(seed)
+    
+
     env = DummyVecEnv([lambda: env])
-    model = PPO2('MlpPolicy', env, policy_kwargs=policy_kwarg, verbose=1)
+    model = PPO1('MlpPolicy', env, policy_kwargs=policy_kwarg,
+        timesteps_per_actorbatch=10000, optim_batchsize=2500,
+        optim_stepsize=3e-4, optim_epochs=6)
 
     logger = {'rewards': [], 'lengths': []}
-    model.learn(total_timesteps=total_steps)
+    model.learn(total_timesteps=total_steps, gerard_logger=logger, seed=seed)
     model.save('saved_ppo_v1')
 
-    with open('ppo_v1_rew', 'wb') as fp: 
-        dic = {'ppo': logger}
+    with open('ppo_reward', 'wb') as fp: 
+        dic = {'v0': logger}
         pickle.dump(dic, fp)
-
-def render(): 
-    env = gym.make('Driving-v0')
-    env.seed(3)
-    env = DummyVecEnv([lambda: env])
-    model = PPO1.load('saved_ppo_v0')
-
-    with open('ppo_v1_rew', 'rb') as fp: 
-        logger = pickle.load(fp)
-
-    reward = [] 
-    ob = env.reset()
-    while True: 
-        action, _states = model.predict(ob)
-        ob, rew, done, _ = env.step(action)
-        print(round(rew.item(), 3))
-        if done: 
-            break
-        reward.append(rew.item())
-        env.render()
-    env.close()
-
-    graph_reward(reward)
-
-    print('SUM OF REWARD: ', sum(reward))
-    for ind in range(len(reward) - 2, -1, -1): 
-        reward[ind] += reward[ind + 1] * 0.99
-    print('SUM OF REWARD GAMMA 0.99: ', sum(reward))
 
 if __name__ == '__main__': 
     main()

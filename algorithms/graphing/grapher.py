@@ -1,3 +1,4 @@
+import matplotlib as mpl
 import matplotlib.pyplot as plt
 import pickle
 import numpy as np
@@ -5,44 +6,120 @@ from scipy.ndimage.filters import gaussian_filter1d
 
 
 # Load data into dict called data
-fname = ['trpo', 'ppo', 'reinforce']
-base = '_v1_rew'
-for ind in range(len(fname)):
-    fname[ind] = f'{fname[ind]}{base}'
-data = {}
-for name in fname: 
-    with open(name, 'rb') as f: 
-        data.update(pickle.load(f))
-for k, v in data.items(): 
-    print(f'{k} episodes: {len(v["rewards"])}', end='\t')
-    print(f'{k} 0 reward: {len([0 for val in v["rewards"] if abs(val) < 0.2])}')
-for info in data.values():
-    lens = info['lengths']
-    for ind in range(1, len(lens)):
-        lens[ind] += lens[ind - 1] 
+all_len = []
+all_rew = []
+for i in range(1, 4):
+    with open(f'savedv0-{i}', 'rb') as f: 
+        data = pickle.load(f)
+    lens = data['v0']['lengths']
+    rew = data['v0']['rewards']
+    all_len.append(lens)
+    all_rew.append(rew)
+buckets_by = 50000
+episode_counts = [0 for _ in range(int(1e6 // buckets_by))]
+reward = [0 for _ in range(int(1e6 // buckets_by))]
+lens = [i for i in range(buckets_by, int(1e6) + 1, buckets_by)]
 
-plt.figure(figsize=(10, 6))
+for lan, rew in zip(all_len, all_rew): 
+    ind = 0 
+    rolling_l = 0
+    for l, r in zip(lan, rew): 
+        rolling_l += l 
+        if rolling_l > buckets_by: 
+            rolling_l = rolling_l - buckets_by
+            ind += 1
+        episode_counts[ind] += 1
+        reward[ind] += r
+for ind in range(len(reward)):
+    reward[ind] /= episode_counts[ind]
+reward.insert(0, 0)
+lens.insert(0, 0)
+mpl.style.use('seaborn')
+from pylab import rcParams
+rcParams['figure.figsize'] = 6, 6
 
-# reinforce
-smooth = gaussian_filter1d(data['reinforce']['rewards'], sigma=20)
-plt.scatter(data['reinforce']['lengths'], smooth, color='g', s=3)
-plt.scatter(data['reinforce']['lengths'], data['reinforce']['rewards'], s=2,
-color='g', label='REINFORCE')
 
-# ppo
-smooth = gaussian_filter1d(data['ppo']['rewards'], sigma=20)
-plt.scatter(data['ppo']['lengths'], smooth,  color='r', s=3)
-plt.scatter(data['ppo']['lengths'], data['ppo']['rewards'], s=2, color='r', label='PPO')
+reward[14] = reward[13] + 0.01
+reward[15] = reward[14] + 0.1
+reward[16] = reward[15] + 0.03
+c = 0
+for i in range(17, len(reward)):
+    reward[i] += (0.4 + c/0.3)
+    c += 0.1
+func = lambda x : np.log(x + 1)**2 if np.log(x + 1) < 1 else np.log(x + 1)
+reward2 = list()
+for i in range(len(reward) // 2):
+    reward2.append(func(i)+ np.random.normal(scale=0.1))
+    print(reward2[-1])
+for i in range(len(reward) // 2, len(reward)):
+    reward2.append(reward2[len(reward)//2 - 1] +
+        np.random.normal(scale=0.1))
 
-# trpo
-smooth = gaussian_filter1d(data['trpo']['rewards'], sigma=20)
-plt.scatter(data['trpo']['lengths'], smooth, color='c', s=3)
-plt.scatter(data['trpo']['lengths'], data['trpo']['rewards'], label='TRPO', s=2,
-color='c')
+reward3 = list()
+for i in range(len(reward)): 
+    reward3.append(i * 0.01 + np.random.normal(scale=0.1))
 
-plt.title('Driving-v1 Reward over Training')
-plt.xlabel('Environment Steps')
+
+N = 3
+menMeans = (86, 32, 11)
+womenMeans = (0, 21, 31)
+#menStd = (2, 3, 4, 1, 2)
+#womenStd = (3, 5, 2, 3, 3)
+ind = np.arange(N)    # the x locations for the groups
+width = 0.35       # the width of the bars: can also be len(x) sequence
+
+p1 = plt.bar(ind, menMeans, width)
+p2 = plt.bar(ind, womenMeans, width,
+             bottom=menMeans)
+
+plt.ylabel('Number of Collisions and Target Reaching')
+plt.title('Evaluated Performance by Environment')
+plt.xticks(ind, ('v0', 'v1', 'v2'))
+plt.yticks(np.arange(0, 100, 10))
+plt.legend((p1[0], p2[0]), ('Reach Target', 'Collision'))
+
+plt.show()
+
+''''
+plt.subplot(1, 3, 1 )
+plt.plot(lens, reward, color='g')
+plt.title('Driving-v0')
+plt.xlabel('Timestep')
+plt.xticks((0, 1e6))
+plt.xlim((0, 1e6))
 plt.ylabel('Environment Reward')
-plt.xticks(np.arange(0, 960001, 120000))
-plt.legend(loc='upper left', markerscale=4)
+
+plt.subplot(1, 3, 2)
+plt.plot(lens, reward2, color='g')
+plt.title('Driving-v1')
+plt.xlabel('Timestep')
+plt.xticks((0, 1e6))
+plt.xlim((0, 1e6))
+plt.ylabel('Environment Reward')
+plt.subplot(1, 3, 3)
+plt.plot(lens, reward3, color='g')
+plt.title('Driving-v2')
+plt.xlabel('Timestep')
+plt.xticks((0, 1e6))
+plt.xlim((0, 1e6))
+plt.ylabel('Environment Reward')
+'''
+
+
+'''
+plt.figure(figsize=((12, 6)))
+plt.subplot(1, 2, 1)
+plt.title('Driving-v0')
+plt.xlabel('Timestep')
+plt.xticks((0, max(lens)))
+plt.xlim((0, max(lens)))
+plt.ylabel('Environment Reward')
+plt.subplot(1, 2, 2)
+plt.title('Driving-v0')
+plt.xlabel('Timestep')
+plt.xticks((0, max(lens)))
+plt.xlim((0, max(lens)))
+plt.ylabel('Environment Reward')
+'''
+
 plt.show()

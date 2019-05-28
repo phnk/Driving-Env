@@ -56,7 +56,7 @@ def reset():
     second_coord *= np.random.choice([-1, 1])
     target = np.array((first_coord, second_coord) if
                     np.random.randint(2) else (second_coord, first_coord))
-    target = np.array((6, 2))
+    target = np.array((2, 10))
 
     # Generate and place obstacles without overlap
     perpendicular = np.array((target[1], -target[0]))

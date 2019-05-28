@@ -124,12 +124,15 @@ class DrivingEnv(gym.Env):
         action = np.asarray(action)
         action = action.clip(self.action_space.low, self.action_space.high)
         # Perform action
-        for _ in range(self.frame_skip):
+        self._apply_action(action) 
+        p.stepSimulation()
+        self.timestep += 1
+        for _ in range(1, self.frame_skip):
+            if self._get_done(frame_skip=True):
+                break
             self._apply_action(action) 
             p.stepSimulation()
             self.timestep += 1
-            if self._get_done(frame_skip=True):
-                break
 
         # Retrieve observation
         observation = self._get_observation()
