@@ -18,7 +18,7 @@ class Network(nn.Module):
     '''
     def __init__(self, in_shape, layer_units, critic=False):
         super().__init__()
-        self.hidden_act = nn.Tanh()
+        self.hidden_act = nn.ReLU()
 
         layers = []
         for out_shape in layer_units[:-1]: 
