@@ -35,8 +35,7 @@ Documentation on reward_func *coming soon.*
   
 **Drive towards a randomly placed target.** 
 
-Reaching the target yields
-20 reward. Moving away or towards the target at each step provides
+Reaching the target is 20 reward. Moving away or towards the target at each step provides
 reward equal to the difference in Euclidean distance from the 
 previous step.
 
@@ -61,7 +60,8 @@ previous step.
 [<img src="https://github.com/GerardMaggiolino/Driving-Env/blob/master/demo/Driving-v1-Screenshot.png" height=300 width=300>](https://github.com/GerardMaggiolino/Driving-Env/blob/master/demo/Driving-v1-Example.mov)
   
 **Drive towards a randomly placed target, with an obstacle in-between**.
-Reaching the target yields 20 reward, colliding with the obstacle is
+
+Reaching the target is 20 reward, colliding with the obstacle is
 -20. Moving away or towards the target at each step provides
 reward equal to the difference in Euclidean distance from the 
 previous step. When the car is too close to the obstacle, reward
