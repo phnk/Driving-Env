@@ -192,8 +192,8 @@ class DrivingEnv(gym.Env):
         view_matrix = p.computeViewMatrix(pos, pos + camera_vec, up_vec)
 
         # Display image
-        frame = p.getCameraImage(self.imgsize, self.imgsize, view_matrix, 
-            proj_matrix)[2].reshape(self.imgsize, self.imgsize, 4) 
+        frame = np.reshape(p.getCameraImage(self.imgsize, self.imgsize, 
+            view_matrix, proj_matrix)[2], (self.imgsize, self.imgsize, 4))
         self.img.set_data(frame)
         plt.draw()
         plt.pause(.00001)

@@ -51,7 +51,8 @@ render_func = get_render_func(env)
 
 # We need to use the same statistics for normalization as used in training
 actor_critic, ob_rms = \
-            torch.load(os.path.join(args.load_dir, args.env_name + ".pt"))
+            torch.load(os.path.join(args.load_dir, args.env_name + ".pt"), 
+                map_location='cuda' if torch.cuda.is_available() else 'cpu')
 
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -80,6 +81,7 @@ if args.env_name.find('Bullet') > -1:
             torsoId = i
 
 counter = 0 
+step = 0
 win = 0
 loss = 0
 while True:
@@ -90,8 +92,13 @@ while True:
     # Obser reward and next obs
     obs, reward, done, _ = env.step(action)
     obs = obs.to(device)
+    step += 1
+
+    if step % 2 == 1: 
+      env.render()
 
     if done: 
+      step = 0
       print(reward)
       counter += 1
       if reward > 10: 

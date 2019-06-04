@@ -15,23 +15,12 @@ def reward_func(end, rew):
     return rew[0] if rew[0] > 0 else 0
 
 def main():
-    rewa = []
-    env = gym.make('Driving-v2')
-    env.seed(4)
+    env = gym.make('Driving-v0')
     env.reset()
-    reward = list()
-
-    
-    for _ in range(300): 
-        _, rew, done, _ = env.step([1, 0, 0.04])
-        reward.append(rew)
+    for _ in range(1000):
         env.render()
-        if done: 
-            break
+        env.step(env.action_space.sample())
     env.close()
-    plt.plot(reward[:-1])
-    plt.show()
-
 if __name__ == '__main__': 
     main()
 
