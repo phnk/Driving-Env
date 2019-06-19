@@ -14,22 +14,22 @@ import torch.nn as nn
 from util import *
 
 
-def load_checkpoint(checkpoint_path, config): 
+def load_checkpoint(checkpoint_path, config, device):
     '''
     Loads a checkpoint if it exists. Otherwise, initializes.
     '''
     # Policy
     policy = Network(config['ob_dim'], config['policy_hidden_units'] + 
-        [config['action_dim']])
+        [config['action_dim']]).to(device)
     optim = torch.optim.Adam(policy.parameters(), config['policy_lr'])
     # Critic 
     critic = Network(config['ob_dim'], config['critic_hidden_units'] + [1], 
-        critic=True)
+        critic=True).to(device)
     critic_optim = torch.optim.Adam(critic.parameters(), config['critic_lr'])
     # Std 
-    std = (torch.ones(config['action_dim'], requires_grad=True) if
-        config['std_init'] is None else torch.tensor(config['std_init'],
-        requires_grad=True))
+    std = (torch.ones(config['action_dim'], requires_grad=True, device=device)
+           if config['std_init'] is None else torch.tensor(config['std_init'],
+           requires_grad=True, device=device))
     # Recording 
     ep_reward = []
     
@@ -39,17 +39,17 @@ def load_checkpoint(checkpoint_path, config):
 
         # Reset policy
         policy_param = checkpoint['policy_param']
-        policy = Network(*policy_param)
+        policy = Network(*policy_param).to(device)
         optim = torch.optim.Adam(policy.parameters(), config['policy_lr'])
         # Reset critic
         critic_param = checkpoint['critic_param']
-        critic = Network(*critic_param, critic=True)
+        critic = Network(*critic_param, critic=True).to(device)
         critic_optim = torch.optim.Adam(critic.parameters(), 
             config['critic_lr'])
         # Load state dicts
         policy.load_state_dict(checkpoint['policy'])
         critic.load_state_dict(checkpoint['critic'])
-        std = checkpoint['std']
+        std = checkpoint['std'].to(device)
         optim.add_param_group({'params': std, 'lr': config['std_lr']})
         optim.load_state_dict(checkpoint['optim'])
         critic_optim.load_state_dict(checkpoint['critic_optim'])
@@ -68,14 +68,14 @@ def save_checkpoint(checkpoint_path, policy, optim, critic, critic_optim,
     Saves checkpoint.
     '''
     torch.save({
-        'policy': policy.state_dict(), 
+        'policy': policy.to(torch.device('cpu')).state_dict(),
         'policy_param': (config['ob_dim'], config['policy_hidden_units'] + 
             [config['action_dim']]),
-        'critic': critic.state_dict(), 
+        'critic': critic.to(torch.device('cpu')).state_dict(),
         'critic_param': (config['ob_dim'], config['critic_hidden_units'] + [1]),
         'optim': optim.state_dict(), 
         'critic_optim': critic_optim.state_dict(),
-        'std': std, 
+        'std': std.cpu(),
         'ep_reward': ep_reward
     }, checkpoint_path)
 
@@ -100,7 +100,7 @@ def main():
     'max_episodes': 4, 
     'critic_max_batch': 256,
     'discount': 0.99,
-    'epochs': 0
+    'epochs': 1
     }
 
     env = gym.make('Driving-v0')
@@ -111,15 +111,11 @@ def main():
     config['std_init'] = (env.action_space.high - env.action_space.low) 
 
     # Load checkpoint
+    device = (torch.device('cuda') if torch.cuda.is_available() else
+              torch.device('cpu'))
     checkp_path = 'checkpoint_ac.tar'
     policy, optim, critic, critic_optim, std, episode_reward = \
-        load_checkpoint(checkp_path, config)
-    device = (torch.device('cuda') if torch.cuda.is_available() else 
-        torch.device('cpu'))
-    policy.to(device)
-    critic.to(device)
-    std.to(device)
-
+        load_checkpoint(checkp_path, config, device)
     critic_loss = nn.MSELoss(reduction='mean')
 
     # Train over epochs (batches of normalized steps)
@@ -195,7 +191,7 @@ def main():
         optim.step()
 
         # Save checkpoint 
-        if ep % 5 == 0: 
+        if ep % 5 == 0:
             print([round(i.item(), 3) for i in std])
             print(f'Episode {len(episode_reward)}\t'
                   'Reward:\t', round(sum(episode_reward[-30:])

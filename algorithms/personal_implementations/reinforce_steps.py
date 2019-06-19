@@ -13,31 +13,32 @@ import torch.nn as nn
 from util import *
 
 
-def load_checkpoint(checkpoint_path, config): 
+def load_checkpoint(checkpoint_path, config, device):
     '''
     Loads a checkpoint if it exists. Otherwise, initializes.
     '''
     # Policy
-    policy = Network(config['ob_dim'], config['policy_hidden_units'] + 
-        [config['action_dim']])
+    policy = Network(config['ob_dim'], config['policy_hidden_units'] +
+        [config['action_dim']]).to(device)
     optim = torch.optim.Adam(policy.parameters(), config['policy_lr'])
-    # Std 
-    std = torch.ones(config['action_dim'], requires_grad=True)
-    # Recording 
+    # Std
+    std = torch.ones(config['action_dim'], requires_grad=True,
+                     device=device)
+    # Recording
     ep_reward = []
-    
+
     # Try to load from checkpoint
-    try: 
+    try:
         checkpoint = torch.load(checkpoint_path)
 
         # Reset policy
         policy_param = checkpoint['policy_param']
-        policy = Network(*policy_param)
+        policy = Network(*policy_param).to(device)
         optim = torch.optim.Adam(policy.parameters(), config['policy_lr'])
 
         # Load state dicts
         policy.load_state_dict(checkpoint['policy'])
-        std = checkpoint['std']
+        std = checkpoint['std'].to(device)
         optim.add_param_group({'params': std, 'lr': config['std_lr']})
         optim.load_state_dict(checkpoint['optim'])
         ep_reward = checkpoint['ep_reward']
@@ -45,7 +46,7 @@ def load_checkpoint(checkpoint_path, config):
     except FileNotFoundError:
         optim.add_param_group({'params': std, 'lr': config['std_lr']})
         print('NOTE: Training from scratch.')
-            
+
     return (policy, optim, std, ep_reward)
 
 
@@ -54,16 +55,16 @@ def save_checkpoint(checkpoint_path, policy, optim, std, ep_reward, config):
     Saves checkpoint.
     '''
     torch.save({
-        'policy': policy.state_dict(), 
-        'policy_param': (config['ob_dim'], config['policy_hidden_units'] + 
+        'policy': policy.to(torch.device('cpu')).state_dict(),
+        'policy_param': (config['ob_dim'], config['policy_hidden_units'] +
             [config['action_dim']]),
-        'optim': optim.state_dict(), 
-        'std': std, 
+        'optim': optim.state_dict(),
+        'std': std.cpu(),
         'ep_reward': ep_reward
     }, checkpoint_path)
 
 
-def main(): 
+def main():
     '''
     Calls training procedure.
     '''
@@ -72,14 +73,14 @@ def main():
     config = { 
     'action_dim': None,
     'ob_dim': None,
-    'policy_hidden_units': [64, 64],
-    'max_steps': 1200,
-    'batch_size': 24000,
-    'max_episodes': 30, 
+    'policy_hidden_units': [32, 32],
+    'max_steps': 800,
+    'batch_size': 8000,
+    'max_episodes': 50, 
     'discount': 0.99,
-    'policy_lr': 1e-3,
+    'policy_lr': 1e-2,
     'std_lr': 1e-2,
-    'epochs': 100
+    'epochs': 1
     }
 
     env = gym.make('Driving-v0')
@@ -88,11 +89,10 @@ def main():
 
     # Load checkpoint
     checkp_path = 'checkpoint_reinforce_steps.tar'
-    policy, optim, std, episode_reward = load_checkpoint(checkp_path, config)
-    device = (torch.device('cuda') if torch.cuda.is_available() else 
-        torch.device('cpu'))
-    policy.to(device)
-    std.to(device)
+    device = (torch.device('cuda') if torch.cuda.is_available() else
+              torch.device('cpu'))
+    policy, optim, std, episode_reward = load_checkpoint(checkp_path, config,
+                                                         device)
 
     # Train over epochs (batches of normalized steps)
     for ep in range(1, config['epochs'] + 1):
@@ -147,7 +147,7 @@ def main():
         optim.step()
 
         # Save checkpoint 
-        if ep % 1 == 0: 
+        if ep % 5 == 0:
             print('Sigma: ', [round(i, 3) for i in std.detach().numpy()])
             print(f'Episode {len(episode_reward)}\t'
                   'Reward:\t', round(sum(episode_reward[-(episodes - 1):])
