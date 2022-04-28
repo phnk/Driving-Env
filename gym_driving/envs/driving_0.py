@@ -44,7 +44,7 @@ class Driving0(DrivingEnv):
         self.prev_dist = None
         self.done = False
         self.reward_range = (-1, 20)
-                                           
+
     def reset(self):
         ''' 
         Initialization to start simulation. Loads all proper objects. 

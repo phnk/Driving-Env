@@ -78,6 +78,7 @@ class Car:
         action : float, float, float
             Throttle [0, 1], break [0, 1], steering position [-0.6, 0.6].
         '''
+
         # Speed parameters
         throttle = action[0]
         breaking = action[1]
@@ -86,7 +87,7 @@ class Car:
         c_rolling = 0.3
         c_break = -125
         simulation_step = 0.004 
-
+        breaking = False
         # Calculate speed with friction 
         force = c_break * breaking if breaking else max_torque * throttle
         friction = -self.joint_speed * (self.joint_speed * c_drag + c_rolling)

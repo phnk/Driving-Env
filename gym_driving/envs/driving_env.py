@@ -52,7 +52,7 @@ class DrivingEnv(gym.Env):
         self.lidar_seg = 18
 
         # Set frameskip
-        self.frame_skip = 1
+        self.frame_skip = 4
 
         # Set up action space
         self.action_space = spaces.Box(np.array([0, 0, -.6]), 
@@ -71,6 +71,7 @@ class DrivingEnv(gym.Env):
         
         # Connect client 
         self.client = p.connect(p.DIRECT)
+#        self.client = p.connect(p.GUI)
         p.setTimeStep(1/120, self.client)
         self.closed = False
         # Random generator used for any randomly gen behavior
