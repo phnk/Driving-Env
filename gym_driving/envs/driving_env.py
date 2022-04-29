@@ -40,13 +40,13 @@ class DrivingEnv(gym.Env):
         Example: 
         Child environment has additional goal position of x, y returned
         through _get_observation(). 
-        
+
         low = np.array([-float('inf'), -float('inf')])
         high = np.array([float('inf'), float('inf')])
         super().__init__((low, high))
     '''
     metadata = {'render.modes': ['human']}
-    
+
     def __init__(self, additional_observation=None):
         # Number of lidar segments for car 
         self.lidar_seg = 18
@@ -66,9 +66,9 @@ class DrivingEnv(gym.Env):
             high = np.concatenate((high, additional_observation[1]))
         self.observation_space = spaces.Box(low=low, high=high, 
             dtype=np.float32)
-            
+
         self.reward_range = None
-        
+
         # Connect client 
         self.client = p.connect(p.DIRECT)
 #        self.client = p.connect(p.GUI)
@@ -166,7 +166,7 @@ class DrivingEnv(gym.Env):
 
         return self._get_observation()
 
-    def render(self, mode='human'):
+    def render(self, mode='rgb_array'):
         '''
         Renders the environment through cars perspective. 
 
@@ -175,29 +175,8 @@ class DrivingEnv(gym.Env):
         mode : str, optional
             Render mode according to metadata['render.modes']. 
         '''
-        if self.img is None:
-            self.img = plt.imshow(np.zeros((self.imgsize, self.imgsize, 4)))
-
-        # Base information
-        car_id, client_id = self.car.get_ids()
-        proj_matrix = p.computeProjectionMatrixFOV(fov=60, aspect=1, 
-            nearVal=0.01, farVal=100)
-        pos, ori = [list(l) for l in 
-            p.getBasePositionAndOrientation(car_id, client_id)]
-        pos[2] = 0.2
-        
-        # Rotate camera direction
-        rotation_matrix = np.array(p.getMatrixFromQuaternion(ori)).reshape(3, 3)
-        camera_vec = np.matmul(rotation_matrix, [1, 0, 0])
-        up_vec = np.matmul(rotation_matrix, np.array([0, 0, 1]))
-        view_matrix = p.computeViewMatrix(pos, pos + camera_vec, up_vec)
-
-        # Display image
-        frame = np.reshape(p.getCameraImage(self.imgsize, self.imgsize, 
-            view_matrix, proj_matrix)[2], (self.imgsize, self.imgsize, 4))
-        self.img.set_data(frame)
-        plt.draw()
-        plt.pause(.00001)
+        frame = self.car.get_camera_image()
+        return np.asarray(frame)
 
     def close(self):
         ''' 

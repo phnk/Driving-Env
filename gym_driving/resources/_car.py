@@ -52,9 +52,19 @@ class Car:
         self.min_lidar_range = 0.2
         # Number of segments within covered area
         self.num_seg = lidar_seg
-        
+
         # Determine ray start and end given above parameters
         self._init_lidar()
+
+        # Camera variables
+        self.relative_camera_translation: List[float] = [0.0, 0.0, 1.0]
+        self.relative_camera_rotation: List[float] = [0, 0, 0]
+        self.relative_camera_rotation: List[float] = p.getQuaternionFromEuler(self.relative_camera_rotation)
+        self.camera_width: int = 300
+        self.camera_height: int = 300
+        self.fov: int = 120
+        self.near_val: float = 0.1
+        self.far_val: int = 100
 
     def get_ids(self): 
         ''' 
@@ -95,7 +105,7 @@ class Car:
         self.joint_speed = self.joint_speed + simulation_step * acceleration
         if self.joint_speed < 0: 
             self.joint_speed = 0
-        
+
         # Calculate steering angle from central steering
         central = action[2] 
         wheelbase = 0.325 
@@ -144,7 +154,7 @@ class Car:
             p.getJointState(self.car, self.joint_indices['right_steering'], 
             self.client)[0]) / 2).reshape(-1)
         return np.concatenate((pos, ori, vel, avg_wheel_angle, lidar))
-        
+
     def get_speed(self): 
         ''' 
 
@@ -229,7 +239,7 @@ class Car:
             Optionally pass angle of car in radians to prevent overhead
             of additional call to get angle of car. 
             See Car.get_position_orientation.
-        
+
         Returns
         -------
         np.ndarray
@@ -258,6 +268,36 @@ class Car:
                     lidar_ob[zone] = max(lidar_ob[zone], score)
 
         return lidar_ob
+
+
+    def get_camera_image(self):
+        '''
+        Returns the frame from the camera attached ontop of the wheel-loaders cab.
+        Returns
+        -------
+        np.ndarray
+            Frame of the synthetic camera.
+        '''
+        # see: https://github.com/StanfordVL/bullet3/blob/b47522e9bbef557e7d09be5f416e33bf14551e7a/examples/pybullet/gym/pybullet_envs/minitaur/vision/sim_camera.py#L296
+        pos, ori = p.getBasePositionAndOrientation(self.car, self.client)
+        camera_transform = p.multiplyTransforms(pos, ori, self.relative_camera_translation, self.relative_camera_rotation)
+        orientation_mat = p.getMatrixFromQuaternion(camera_transform[1])
+
+        forward_vec = orientation_mat[::3]
+        camera_target = [
+            camera_transform[0][0] + forward_vec[0],
+            camera_transform[0][1] + forward_vec[1],
+            camera_transform[0][2] + forward_vec[2],
+        ]
+
+        up_vec = orientation_mat[2::3]
+
+        view_mat = p.computeViewMatrix(camera_transform[0], camera_target, up_vec)
+        projection_mat = p.computeProjectionMatrixFOV(fov=self.fov, aspect=self.camera_width / self.camera_height, nearVal=self.near_val, farVal=self.far_val)
+        camera_image = p.getCameraImage(self.camera_width, self.camera_height, viewMatrix=view_mat, projectionMatrix=projection_mat)[2]
+        rgb_array = np.array(camera_image)
+        rgb_array = rgb_array[:, :, :3]
+        return rgb_array
 
     def _init_lidar(self): 
         ''' 

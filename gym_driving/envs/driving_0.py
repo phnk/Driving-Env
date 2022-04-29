@@ -24,8 +24,11 @@ class Driving0(DrivingEnv):
         feature is throttle, second is break, third is central steering
         angle. 
 
-    observation_space : spaces.Box
-        np.ndarray of size 6. [-15, 15] * 2, [-1, 1] * 2, [-5, 5] * 2.
+    observation_space : spaces.Dict
+        "position" : spaces.Box(low=-15, high=15, shape=(2,), dtype=np.float32)
+        "orientation" : spaces.Box(low=-1, low=1, shape=(2,), dtype=np.float32)
+        "velocity" : spaces.Box(low=-5, high=5, shape=(2,), dtype=np.float32)
+
         First pair is vector to target, second is unit vector of car 
         orientation, and third is velocity vector.
 
@@ -36,10 +39,32 @@ class Driving0(DrivingEnv):
         super().__init__()
 
         # Reset observation space as there is no lidar
-        low = np.array([-15, -15, -1, -1, -5, -5])
-        high = np.array([15, 15, 1, 1, 5, 5])
-        self.observation_space = gym.spaces.Box(low=low, high=high, 
-            dtype=np.float32)
+        self.position: gym.spaces.box.Box = gym.spaces.box.Box(
+            low = -15,
+            high = 15,
+            shape = (2,),
+            dtype=np.float32
+        )
+
+        self.orientation: gym.spaces.box.Box = gym.spaces.box.Box(
+            low = -1,
+            high = 1,
+            shape = (2,),
+            dtype=np.float32
+        )
+
+        self.velocity: gym.spaces.box.Box = gym.spaces.box.Box(
+            low = -5,
+            high = 5,
+            shape = (2,),
+            dtype=np.float32
+        )
+
+        self.observation_space = gym.spaces.dict.Dict({
+                "position": self.position,
+                "orientation": self.orientation,
+                "velocity": self.velocity
+        })
 
         self.prev_dist = None
         self.done = False
@@ -111,7 +136,11 @@ class Driving0(DrivingEnv):
         '''
         pos, ori = self.car.get_position_orientation()
         vel = self.car.get_velocity()
-        return np.concatenate((self.target - pos, ori, vel))
+        return {
+                "position": self.target - pos,
+                "orientation": ori, 
+                "velocity": vel
+                }
 
     def _get_reward(self, obs):
         ''' 
