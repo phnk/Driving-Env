@@ -63,7 +63,7 @@ class Driving0(DrivingEnv):
         self.camera_image: gym.spaces.box.Box = gym.spaces.box.Box(
             low = 0,
             high = 255,
-            shape = (100,100,4),
+            shape = (100,100,3),
             dtype=np.uint8
         )
 
@@ -144,7 +144,7 @@ class Driving0(DrivingEnv):
         '''
         pos, ori = self.car.get_position_orientation()
         vel = self.car.get_velocity()
-        camera_image = self.car.get_camera_image
+        camera_image = self.car.get_camera_image()
         return {
                 "position": self.target - pos,
                 "orientation": ori, 

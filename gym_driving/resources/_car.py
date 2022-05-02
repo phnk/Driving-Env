@@ -60,8 +60,8 @@ class Car:
         self.relative_camera_translation: List[float] = [0.0, 0.0, 1.0]
         self.relative_camera_rotation: List[float] = [0, 0, 0]
         self.relative_camera_rotation: List[float] = p.getQuaternionFromEuler(self.relative_camera_rotation)
-        self.camera_width: int = 300
-        self.camera_height: int = 300
+        self.camera_width: int = 100
+        self.camera_height: int = 100
         self.fov: int = 120
         self.near_val: float = 0.1
         self.far_val: int = 100
