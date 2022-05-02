@@ -60,10 +60,18 @@ class Driving0(DrivingEnv):
             dtype=np.float32
         )
 
+        self.camera_image: gym.spaces.box.Box = gym.spaces.box.Box(
+            low = 0,
+            high = 255,
+            shape = (100,100,4),
+            dtype=np.uint8
+        )
+
         self.observation_space = gym.spaces.dict.Dict({
                 "position": self.position,
                 "orientation": self.orientation,
-                "velocity": self.velocity
+                "velocity": self.velocity,
+                "camera_image": self.camera_image
         })
 
         self.prev_dist = None
@@ -136,10 +144,12 @@ class Driving0(DrivingEnv):
         '''
         pos, ori = self.car.get_position_orientation()
         vel = self.car.get_velocity()
+        camera_image = self.car.get_camera_image
         return {
                 "position": self.target - pos,
                 "orientation": ori, 
-                "velocity": vel
+                "velocity": vel,
+                "camera_image": camera_image
                 }
 
     def _get_reward(self, obs):
