@@ -52,14 +52,14 @@ class Driving0(DrivingEnv):
             shape = (2,),
             dtype=np.float32
         )
-
-        self.velocity: gym.spaces.box.Box = gym.spaces.box.Box(
+        """
+       self.velocity: gym.spaces.box.Box = gym.spaces.box.Box(
             low = -5,
             high = 5,
             shape = (2,),
             dtype=np.float32
         )
-
+        """
         self.camera_image: gym.spaces.box.Box = gym.spaces.box.Box(
             low = 0,
             high = 255,
@@ -70,7 +70,7 @@ class Driving0(DrivingEnv):
         self.observation_space = gym.spaces.dict.Dict({
                 "position": self.position,
                 "orientation": self.orientation,
-                "velocity": self.velocity,
+#                "velocity": self.velocity,
                 "camera_image": self.camera_image
         })
 
@@ -143,12 +143,12 @@ class Driving0(DrivingEnv):
             vector to target (2), unit orientation (2), velocity (2)
         '''
         pos, ori = self.car.get_position_orientation()
-        vel = self.car.get_velocity()
+#        vel = self.car.get_velocity()
         camera_image = self.car.get_camera_image()
         return {
                 "position": self.target - pos,
                 "orientation": ori, 
-                "velocity": vel,
+#                "velocity": vel,
                 "camera_image": camera_image
                 }
 
