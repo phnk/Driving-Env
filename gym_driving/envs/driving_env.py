@@ -45,7 +45,7 @@ class DrivingEnv(gym.Env):
         high = np.array([float('inf'), float('inf')])
         super().__init__((low, high))
     '''
-    metadata = {'render.modes': ['human']}
+    metadata = {'render.modes': ['human', 'rgb_array']}
 
     def __init__(self, additional_observation=None):
         # Number of lidar segments for car 

@@ -126,7 +126,7 @@ class Driving0(DrivingEnv):
         # Terminal from episode length over 1000
         if self.timestep >= 1000: 
             return True
-       # Terminal from driving off range
+        # Terminal from driving off range
         if abs(currPos[0]) > 14.8 or abs(currPos[1]) > 14.8: 
             return True
         # Terminal from reaching target
