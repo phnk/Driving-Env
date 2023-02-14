@@ -8,13 +8,14 @@ import matplotlib.pyplot as plt
 
 def main():
     env = gym.make('Driving-v0')
+    print(env.observation_space)
     env.reset()
     for _ in range(10000):
-        env.render(mode="rgb_array")
-        obs, reward, done, info = env.step(env.action_space.sample())
+        action = env.action_space.sample()
+        obs, reward, done, info = env.step(action)
+        print(reward)
 
         if done:
-            print(done)
             obs = env.reset()
 
     env.close()

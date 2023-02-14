@@ -5,14 +5,16 @@ Driving-v0 environment. Target with no obstacles.
 import gym 
 # External libraries 
 import pybullet as p
+import pybullet_data
 import numpy as np
 # Local resources
-from gym_driving.envs.driving_env import DrivingEnv
+from gym_driving.resources import getResourcePath
 import gym_driving.resources._car as car
 from gym_driving.resources._cube import Cube
+from gym.spaces import Dict
 
 
-class Driving0(DrivingEnv):
+class Driving0(gym.Env):
     '''
     Drive towards a randomly placed target. Reaching the target is 20
     reward. Moving away or towards the target at each step provides
@@ -36,53 +38,37 @@ class Driving0(DrivingEnv):
     easily available; see documentation. 
     '''
     def __init__(self):
-        super().__init__()
-
         # Reset observation space as there is no lidar
 
-        self.position: gym.spaces.box.Box = gym.spaces.box.Box(
-            low = -15,
-            high = 15,
-            shape = (2,),
-            dtype=np.float32
-        )
+        # position, orientation, velocity
+        low = np.array([-15, -15, -1, -1, -5, -5])
+        high = np.array([15, 15, 1, 1, 5, 5])
 
-        self.orientation: gym.spaces.box.Box = gym.spaces.box.Box(
-            low = -1,
-            high = 1,
-            shape = (2,),
-            dtype=np.float32
-        )
-
-        self.velocity: gym.spaces.box.Box = gym.spaces.box.Box(
-            low = -5,
-            high = 5,
-            shape = (2,),
-            dtype=np.float32
-        )
-
-        self.camera_image: gym.spaces.box.Box = gym.spaces.box.Box(
-            low = 0,
-            high = 255,
-            shape = (100,100,3),
-            dtype=np.uint8
-        )
-
-        self.observation_space = gym.spaces.dict.Dict({
-                "position": self.position,
-                "orientation": self.orientation,
-                "velocity": self.velocity,
-                "camera_image": self.camera_image
-        })
+        self.observation_space = gym.spaces.Box(low=low, high=high, dtype=np.float64)
+        self.action_space = gym.spaces.Box(low=np.array([0, 0, -.6]), high=np.array([1, 1, 0.6]))
 
         self.prev_dist = None
         self.done = False
-        self.reward_range = (-1, 20)
+        self.client = p.connect(p.GUI)
+        p.setTimeStep(1/120, self.client)
+        self.lidar_seg = 4
+        # Random generator used for any randomly gen behavior
+        self.random = np.random.RandomState()
 
     def reset(self):
         ''' 
         Initialization to start simulation. Loads all proper objects. 
         '''
+
+        p.resetSimulation(self.client)
+        p.setAdditionalSearchPath(pybullet_data.getDataPath())
+        p.setGravity(0, 0, -10)
+        self.plane = p.loadURDF(getResourcePath('plane/plane.urdf'), 
+            physicsClientId=self.client)
+        self.car = car.Car(self.lidar_seg, client=self.client)
+
+        self.timestep = 0
+
         # Generate new target in front of car each episode
         first_coord = self.random.randint(-13, 13)
         second_coord = self.random.randint(0, 13) if abs(first_coord) > 5 else \
@@ -92,16 +78,36 @@ class Driving0(DrivingEnv):
                         self.random.randint(2) else (second_coord, first_coord))
 
         # Default initialization of car, plane, and gravity 
-        super().reset()
-
-        # Visual display of target
         Cube(list(self.target) +  [0], 2, marker=True, client=self.client)
+
 
         self.done = False
         self.prev_dist = np.linalg.norm(np.array(
             self.car.get_position_orientation()[0]) - self.target)
 
-        return self._get_observation()
+        obs = self._get_observation()
+        return obs
+
+    def step(self, action):
+        # Cast to np and clip to action space
+        action = np.asarray(action)
+        action = action.clip(self.action_space.low, self.action_space.high)
+        # Perform action
+        self.car.apply_action(action) 
+        p.stepSimulation()
+        self.timestep += 1
+
+        # Retrieve observation
+        observation = self._get_observation()
+
+        # Compute reward 
+        reward = self._get_reward(observation)
+
+        # Retrieve done status
+        done = self._get_done()
+
+        # Return observation, reward, done, {} 
+        return observation, reward, done, {}
 
     def _get_done(self, frame_skip=False): 
         ''' 
@@ -119,9 +125,6 @@ class Driving0(DrivingEnv):
         bool 
             True if episode done.
         '''
-        if not frame_skip: 
-            return self.done
-
         currPos, _= self.car.get_position_orientation()
         # Terminal from episode length over 1000
         if self.timestep >= 1000: 
@@ -145,13 +148,7 @@ class Driving0(DrivingEnv):
         '''
         pos, ori = self.car.get_position_orientation()
         vel = self.car.get_velocity()
-        camera_image = self.car.get_camera_image()
-        return {
-                "position": self.target - pos,
-                "orientation": ori, 
-                "velocity": vel,
-                "camera_image": camera_image
-                }
+        return np.concatenate((self.target - pos, ori, vel))
 
     def _get_reward(self, obs):
         ''' 
@@ -187,8 +184,7 @@ class Driving0(DrivingEnv):
         # Terminal from reaching target
         if distance < 0.8: 
             self.done = True
-            return (20 if self.reward_func is None else
-                self.reward_func(True, (20,)))
+            return 20
 
         # Change in distance
         delta_distance = (self.prev_dist - distance) 
@@ -197,11 +193,4 @@ class Driving0(DrivingEnv):
 
         # Return either documented reward or scaled reward if there's a
         # reward function
-        return (delta_distance if self.reward_func is None else 
-            self.reward_func(False, (delta_distance,)))
-
-    def __del__(self): 
-        ''' 
-        Call super del for any additional cleanup. 
-        '''
-        super().__del__()
+        return delta_distance
