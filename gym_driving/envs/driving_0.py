@@ -49,8 +49,8 @@ class Driving0(gym.Env):
 
         self.prev_dist = None
         self.done = False
-        #self.client = p.connect(p.GUI)
-        self.client = p.connect(p.DIRECT)
+        self.client = p.connect(p.GUI)
+        #self.client = p.connect(p.DIRECT)
         p.setTimeStep(1/120, self.client)
         self.lidar_seg = 4
         # Random generator used for any randomly gen behavior
