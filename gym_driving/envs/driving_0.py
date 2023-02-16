@@ -127,7 +127,7 @@ class Driving0(gym.Env):
         '''
         currPos, _= self.car.get_position_orientation()
         # Terminal from episode length over 1000
-        if self.timestep >= 1000: 
+        if self.timestep >= 1000:
             return True
         # Terminal from driving off range
         if abs(currPos[0]) > 14.8 or abs(currPos[1]) > 14.8: 
