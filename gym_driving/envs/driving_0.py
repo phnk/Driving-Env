@@ -49,7 +49,8 @@ class Driving0(gym.Env):
 
         self.prev_dist = None
         self.done = False
-        self.client = p.connect(p.GUI)
+        #self.client = p.connect(p.GUI)
+        self.client = p.connect(p.DIRECT)
         p.setTimeStep(1/120, self.client)
         self.lidar_seg = 4
         # Random generator used for any randomly gen behavior
@@ -103,39 +104,8 @@ class Driving0(gym.Env):
         # Compute reward 
         reward = self._get_reward(observation)
 
-        # Retrieve done status
-        done = self._get_done()
-
         # Return observation, reward, done, {} 
-        return observation, reward, done, {}
-
-    def _get_done(self, frame_skip=False): 
-        ''' 
-        Returns true if episode done.
-
-        Parameters
-        ----------
-        frame_skip : bool, optional 
-            If True, forces _get_done() to perform done calculations 
-            without relying on other functions (like _get_reward()) to
-            update the done status. 
-
-        Returns 
-        -------
-        bool 
-            True if episode done.
-        '''
-        currPos, _= self.car.get_position_orientation()
-        # Terminal from episode length over 1000
-        if self.timestep >= 1000:
-            return True
-        # Terminal from driving off range
-        if abs(currPos[0]) > 14.8 or abs(currPos[1]) > 14.8: 
-            return True
-        # Terminal from reaching target
-        if np.linalg.norm(currPos - self.target) < 0.8: 
-            return True
-        return False
+        return observation, reward, self.done, {}
 
     def _get_observation(self): 
         ''' 
