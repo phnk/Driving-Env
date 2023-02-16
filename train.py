@@ -9,6 +9,7 @@ from stable_baselines3.common.env_util import make_vec_env
 from stable_baselines3.common.vec_env import SubprocVecEnv
 from stable_baselines3.common.callbacks import CheckpointCallback, EvalCallback
 from stable_baselines3.common.results_plotter import load_results, ts2xy
+from stable_baselines3.common.logger import configure
 
 def plot_results(log_folder, title="training phase"):
 
@@ -54,15 +55,17 @@ if __name__ == "__main__":
         device = torch.device("cuda:{}".format("0"))
         torch.cuda.set_device(device)
 
-    env = make_vec_env("Driving-v0", n_envs=1, vec_env_cls=SubprocVecEnv)
+    env = make_vec_env("Driving-v0", n_envs=16, vec_env_cls=SubprocVecEnv)
     eval_env = make_vec_env("Driving-v0", vec_env_cls=SubprocVecEnv)
 
     callbacks.append(EvalCallback(eval_env, best_model_save_path=log_dir, eval_freq=50000, deterministic=True, render=False))
     callbacks.append(CheckpointCallback(save_freq=100000, save_path=log_dir, name_prefix="rl_model"))
+    new_logger = configure(log_dir, ["stdout", "csv"])
 
     model = PPO("MlpPolicy", env, **hyperparameters)
+    model.set_logger(new_logger)
 
-    model.learn(3e6, callback=callbacks)
+    model.learn(6e5, callback=callbacks)
     model.save("logs/final_model")
 
     plot_results(log_dir)
