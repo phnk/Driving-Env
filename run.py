@@ -11,7 +11,7 @@ def main():
 
     i = 0 
 
-    env.reset()
+    obs = env.reset()
     while True:
         if i % 2 == 0:
             # random action
